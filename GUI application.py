@@ -129,23 +129,31 @@ class MainWindow(QMainWindow):
         self.grid = QGridLayout()
         self.gridScan = QGridLayout()
 
-        # self.setLayout(self.layout)
+        # GIANT GROUP BOXES
+        # GIANT GROUP BOXES - Layout
+        self.giantGrid1 = QGridLayout()
+        self.giantGrid2 = QGridLayout()
 
-        # Tab Widget Placeholder
+        # GIANT GROUP BOXES - Creation
+        self.giantGroupBox1 = QGroupBox('')
+        self.giantGroupBox1.setLayout(self.giantGrid1)
+        self.giantGroupBox2 = QGroupBox('')
+        self.giantGroupBox2.setLayout(self.giantGrid2)
+
+        # HARDWARE SETTINGS
+        # HARDWARE SETTINGS - Group Box
+        # Created a Group Box to contain the tabs for the Hardware
         self.tabGroupBox = QGroupBox('Hardware Settings')
         self.tabGroupBox.setStyleSheet('QGroupBox { color: #52988C; font: bold 12pt; }')
         self.tabGroupBox.setLayout(self.vbox1)  # Setting the layout of the group box as vertical
 
-        # Tab Widget ADDING IT IN
+        # HARDWARE SETTINGS - Tab Widget
+        # Assigning a variable from the Class tabWidget
         self.tabWidgetBox = tabWidget(self, self.config, self.pico, self.func)
 
-        # Having trouble setting up this form layout to get the formatting I want
-        # self.formLayout.addRow('Sampling Rate', self.cb1Box1)
-        # self.formLayout.addRow('Range', self.cb2Box1)
-        # self.formLayout.addRow('Sampling Interval', self.cb3Box1)
 
-        # Adding combo boxes to widget
-        self.grid.addWidget(self.tabGroupBox, 0, 0, 2, 1)  # Adds the Group Box to the Grid Layout
+        # Adding Group Boxes to the widget
+        self.giantGrid1.addWidget(self.tabGroupBox, 0, 0)  # Adds the Group Box to the Grid Layout
         self.vbox1.addWidget(self.tabWidgetBox.tabs)  # Adds Tabs to the Hardware Settings GroupBox
 
         # HARDWARE SETTINGS - Setting Width
@@ -158,7 +166,7 @@ class MainWindow(QMainWindow):
         self.notesGroupBox.setStyleSheet('QGroupBox { color: #52988C; font: bold 12pt; }')
         self.notesGroupBox.setLayout(self.vbox2)
 
-        self.grid.addWidget(self.notesGroupBox, 0, 1, 2, 1)
+        self.giantGrid1.addWidget(self.notesGroupBox, 0, 1)
 
         # Creating a note pad
         self.editor = QPlainTextEdit()
@@ -306,7 +314,8 @@ class MainWindow(QMainWindow):
         self.keyboardCombo.addItems(['OFF', 'ON'])
 
         # Organizing into a grid
-        self.grid.addWidget(self.testGroupBox, 2, 0, 2, 2)  # extends column & row size of groupbox
+        self.giantGrid1.addWidget(self.testGroupBox, 1, 0, 1, 2)  # extends column & row size of groupbox
+
         self.gridScan.addWidget(self.minLabel, 0, 1, 1, 1)
         self.gridScan.addWidget(self.stepLabel, 0, 2, 1, 1)
         self.gridScan.addWidget(self.maxLabel, 0, 3, 1, 1)
@@ -333,7 +342,6 @@ class MainWindow(QMainWindow):
         self.gridScan.addWidget(self.xLoadSb, 8, 1)
         self.gridScan.addWidget(self.yLoadSb, 8, 2)
         self.gridScan.addWidget(self.zLoadSb, 8, 3)
-        #self.gridScan.addWidget(self.zLoadSb, 8, 3)
 
 
         self.gridScan.addWidget(self.blankLabel, 1, 4)  # Blank Label work around to seperate widgets
@@ -360,7 +368,7 @@ class MainWindow(QMainWindow):
         self.plotGroupBox.setStyleSheet('QGroupBox { color: #52988C; font: bold 12pt; }')
         self.plotGroupBox.setLayout(self.vbox4)
 
-        self.grid.addWidget(self.plotGroupBox, 0, 2, 3, 2)
+        self.giantGrid2.addWidget(self.plotGroupBox, 0, 0, 2, 1)
         self.vbox4.addWidget(self.tabWidgetBox.graphTabs)
 
         # Feedback Box
@@ -373,12 +381,23 @@ class MainWindow(QMainWindow):
         self.vbox5.addWidget(self.feedback_Update)
         self.feedback_Update.setObjectName("feedback_Update")
 
+        self.giantGrid2.addWidget(self.feedbackGroupBox, 2, 0, 1, 1)
 
-        self.grid.addWidget(self.feedbackGroupBox, 3, 2, 1, 2)
+        # SPLITTER
+        # Create the splitter to seperate the giant group boxes
+        self.splitter = QSplitter(Qt.Horizontal)
+
+        # Add the giant group boxes to the splitter widget
+        self.splitter.addWidget(self.giantGroupBox1)
+        self.splitter.addWidget(self.giantGroupBox2)
+
+        # These values for setSizes makes it so the screen is split evenly
+        self.splitter.setSizes([400, 800])
+        self.hbox.addWidget(self.splitter)  # Add splitter to hbox
 
         # Setting the central widget
         self.centralWidget = QWidget()
-        self.centralWidget.setLayout(self.grid)
+        self.centralWidget.setLayout(self.hbox) # Set Central Widget to the layout of the splitter
         self.setCentralWidget(self.centralWidget)
 
 
