@@ -500,7 +500,23 @@ class MainWindow(QMainWindow):
     # Jogging Actions
     def scan(self):
         print('scan starting')
-        self.Galil.scan(self.scanSize, self.stepSize)
+        try:
+            self.Galil.scan(self.scanSize, self.stepSize)
+        except:
+            print('Scan failed')
+
+        #dummy scan code, flesh this out later
+        self.width = 30
+        self.height = 30
+        self.data = np.zeros((self.width, self.height))
+
+        for y in range(30):
+            for x in range(30):
+                self.data.itemset((x, y), (self.width / 2 - abs(self.width / 2 - x)) * (self.height / 2 - abs(self.height / 2 - y)))
+                if x % self.height == 0:
+                    self.tabWidgetBox.intensityMap.setImage(self.data)
+                    pg.QtGui.QApplication.processEvents()
+                # iv.show()
 
     def abort_motion(self):
         self.Galil.abort()
@@ -637,6 +653,7 @@ class tabWidget(QWidget):
 
 
         vbox = QVBoxLayout()
+        vbox2 = QVBoxLayout()
 
         self.graphTabs = QTabWidget()
         self.graphTab1 = QWidget()
@@ -653,10 +670,14 @@ class tabWidget(QWidget):
 
         # self.plotWidget = pg.PlotWidget()
         self.plotWidget = self.createPlotWidget()
+        self.intensityMap = self.createIntensityMap()
 
 
         vbox.addWidget(self.plotWidget)
         self.graphTab1.setLayout(vbox)
+
+        vbox2.addWidget(self.intensityMap)
+        self.graphTab2.setLayout(vbox2)
 
 
         self.graphTabs.addTab(self.graphTab1, 'Real Time')
@@ -894,6 +915,10 @@ class tabWidget(QWidget):
         self.Galil.toggle_handle()
         print("Toggle pressed")
 
+    def createIntensityMap(self):
+        intensityMap = pg.image()
+        return intensityMap
+
     def createPlotWidget(self):
         plotWidget = pg.PlotWidget()
         color = self.palette().color(QPalette.Window)  # Get the default window background,
@@ -960,7 +985,10 @@ class tabWidget(QWidget):
 
     def scan(self):
         print('scan starting')
-        self.Galil.scan(self.scanSize, self.stepSize)
+        try:
+            self.Galil.scan(self.scanSize, self.stepSize)
+        except:
+            print("Scan failed")
 
     def closeEvent(self, event):
         bQuit = False
