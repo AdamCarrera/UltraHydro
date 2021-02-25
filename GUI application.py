@@ -41,6 +41,7 @@ class MainWindow(QMainWindow):
         self.initialize_FunctionGenerator()
         self.initialize_Picoscope()
         self.Galil = Galil()
+        self.feedback_Update = QTextBrowser()
 
         # setting title
         self.setWindowTitle("Ultra Hydrophonics")
@@ -149,7 +150,7 @@ class MainWindow(QMainWindow):
 
         # HARDWARE SETTINGS - Tab Widget
         # Assigning a variable from the Class tabWidget
-        self.tabWidgetBox = tabWidget(self, self.config, self.pico, self.func)
+        self.tabWidgetBox = tabWidget(self, self.config, self.pico, self.func, self.feedback_Update)
 
 
         # Adding Group Boxes to the widget
@@ -377,7 +378,6 @@ class MainWindow(QMainWindow):
         self.feedbackGroupBox.setLayout(self.vbox5)
 
         # Updating feedback message
-        self.feedback_Update = QTextBrowser()
         self.vbox5.addWidget(self.feedback_Update)
         self.feedback_Update.setObjectName("feedback_Update")
 
@@ -488,7 +488,7 @@ class MainWindow(QMainWindow):
         except FileNotFoundError:
             print("local.yaml not found")
 
-        print(self.config)
+        #print(self.config)
     # Updating the program title
 
     def update_title(self):
@@ -576,7 +576,6 @@ class MainWindow(QMainWindow):
             print("Function generator failed to initialize")
 
     def initialize_Picoscope(self):
-        print(self.config["picoscope_blocks"])
 
         try:
             self.pico = Picoscope()
@@ -612,7 +611,8 @@ class MainWindow(QMainWindow):
 
 # Tab Widget in its own Class
 class tabWidget(QWidget):
-    def __init__(self, parent, parameters, picoscope, siglent):
+    def __init__(self, parent, parameters, picoscope, siglent, feedback):
+        self.feedback_Update = feedback
         self.screen_resolution = None
         self.pgOffset = {}  # empty dictionary
 
@@ -721,7 +721,7 @@ class tabWidget(QWidget):
         self.rangeCombo.setCurrentText(str(self.config["picoscope_rangemV"]))
 
         self.intervalCombo = QComboBox(self)
-        self.intervalCombo.addItems(['2', '4', '8', '16', '32', '64', '128'])
+        self.intervalCombo.addItems(['2', '4', '8', '16', '32', '48', '64'])
         self.intervalCombo.setCurrentText(str(2 ** (self.config["picoscope_timebase"])))
 
         self.triggerCombo = QComboBox(self)
@@ -891,6 +891,8 @@ class tabWidget(QWidget):
                         timebase=self.intervalCombo.currentIndex() + 1, external=self.triggerCombo.currentIndex(),
                         triggermV=self.thresholdSpinBox.value(), preSamples=self.preTriggerSamplesSpinBox.value(),
                         postSamples=self.postTriggerSamplesSpinBox.value())
+
+        self.feedback_Update.append("Picoscope capture time = " + str(self.pico.getRuntime()) + " ns")
         self.pico.block()
         average = np.mean(self.pico.data_mVRay, axis=0)
         self.plotWidget.plot(self.pico.time, average, clear=True)

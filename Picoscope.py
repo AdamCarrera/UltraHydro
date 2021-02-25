@@ -136,8 +136,6 @@ class Picoscope(object):
 
             assert_pico_ok(self.status["changePowerSource"])
 
-        # Displays the serial number and handle
-        print(self.chandle.value)
 
     def setup(self, range_mV, blocks, timebase, external, triggermV, preSamples, postSamples):
         # Set up channel A
@@ -145,6 +143,9 @@ class Picoscope(object):
         self.channel = ps.PS5000A_CHANNEL["PS5000A_CHANNEL_A"]
         # enabled = 1
         self.coupling_type = ps.PS5000A_COUPLING["PS5000A_DC"]
+
+        self.runtimeNs = (preSamples + postSamples) * self.timeIntervalns.value
+
 
         self.setRange(range_mV)
         # Finds the max ADC count
@@ -161,6 +162,9 @@ class Picoscope(object):
         self.setWindow(preSamples, postSamples)
         self.getTimebase()
         self.setBlocks(blocks)
+
+    def getRuntime(self):
+        return self.runtimeNs
 
     def setTimebase(self, timebase):
         self.timebase = timebase
@@ -201,8 +205,16 @@ class Picoscope(object):
         # direction = PS5000A_RISING = 2
         # delay = 0 s
         # auto Trigger = 1000 ms
-        self.status["trigger"] = ps.ps5000aSetSimpleTrigger(self.chandle, 1, source, threshold, 2, 0, 18)
-        assert_pico_ok(self.status["trigger"])
+        if (self.runtimeNs) > 2^16-1 :
+            autotriggerDelay = 2^16-1
+        else:
+            autotriggerDelay = int(self.runtimeNs)
+
+        try:
+            self.status["trigger"] = ps.ps5000aSetSimpleTrigger(self.chandle, 1, source, threshold, 2, 0, ctypes.c_int16(0))
+            assert_pico_ok(self.status["trigger"])
+        except:
+            print("Invalid picoscope trigger settings")
 
     def setWindow(self, pre, post):
         self.preTriggerSamples = pre
@@ -214,7 +226,7 @@ class Picoscope(object):
                                                             ctypes.byref(self.timeIntervalns),
                                                             ctypes.byref(self.returnedMaxSamples), 0)
         assert_pico_ok(self.status["GetTimebase"])
-        print("Time interval:" + str(self.timeIntervalns.value))
+        print("Picoscope sampling interval:" + str(self.timeIntervalns.value) + " ns")
 
     def setRange(self, range_mV):
         if range_mV in self.possibleRanges_mV:
