@@ -724,7 +724,7 @@ class tabWidget(QWidget):
         self.rangeCombo.setCurrentText(str(self.config["picoscope_rangemV"]))
 
         self.intervalCombo = QComboBox(self)
-        self.intervalCombo.addItems(['2', '4', '8', '16', '32', '48', '64'])
+        self.intervalCombo.addItems(['2', '4', '8', '16', '32', '48', '64', '80', '96', '112', '128', '144'])
         self.intervalCombo.setCurrentText(str(2 ** (self.config["picoscope_timebase"])))
 
         self.triggerCombo = QComboBox(self)
