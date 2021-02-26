@@ -583,6 +583,7 @@ class MainWindow(QMainWindow):
                             timebase=self.config["picoscope_timebase"],
                             external=self.config["picoscope_externalTrigger"],
                             triggermV=self.config["picoscope_triggermV"],
+                            delay = self.config["picoscope_delay"],
                             preSamples=self.config["picoscope_preSamples"],
                             postSamples=self.config["picoscope_postSamples"])
         except:
@@ -670,12 +671,12 @@ class tabWidget(QWidget):
 
         # self.plotWidget = pg.PlotWidget()
         self.plotWidget = self.createPlotWidget()
-        self.intensityMap = self.createIntensityMap()
 
 
         vbox.addWidget(self.plotWidget)
         self.graphTab1.setLayout(vbox)
 
+        self.intensityMap = pg.image()
         vbox2.addWidget(self.intensityMap)
         self.graphTab2.setLayout(vbox2)
 
@@ -689,6 +690,7 @@ class tabWidget(QWidget):
         self.intervalLabel = QLabel()
         self.triggerLabel = QLabel()
         self.thresholdLabel = QLabel()
+        self.delayLabel = QLabel()
         self.preTriggerLabel = QLabel()
         self.postTriggerLabel = QLabel()
         self.waveformsLabel = QLabel()
@@ -698,6 +700,7 @@ class tabWidget(QWidget):
         self.intervalLabel.setText('Sample Interval (ns)')
         self.triggerLabel.setText('Trigger')
         self.thresholdLabel.setText('Trigger Threshold')
+        self.delayLabel.setText('Trigger delay (samples)')
         self.preTriggerLabel.setText('Pre Trigger Samples')
         self.postTriggerLabel.setText('Post Trigger Samples')
         self.waveformsLabel.setText('Number of waveforms to average')
@@ -743,6 +746,11 @@ class tabWidget(QWidget):
         self.preTriggerSamplesSpinBox.setMaximum(self.config["picoscope_samplesMax"])
         self.preTriggerSamplesSpinBox.setValue(self.config["picoscope_preSamples"])
 
+        self.delaySpinBox = QSpinBox()
+        self.delaySpinBox.setMinimum(0)
+        self.delaySpinBox.setMaximum(self.config["picoscope_delayMax"])
+        self.delaySpinBox.setValue(self.config["picoscope_delay"])
+
         self.postTriggerSamplesSpinBox = QSpinBox()
         self.postTriggerSamplesSpinBox.setMinimum(0)
         self.postTriggerSamplesSpinBox.setMaximum(self.config["picoscope_samplesMax"])
@@ -765,19 +773,21 @@ class tabWidget(QWidget):
         self.gridTab1.addWidget(self.intervalLabel, 2, 0)
         self.gridTab1.addWidget(self.triggerLabel, 3, 0)
         self.gridTab1.addWidget(self.thresholdLabel, 4, 0)
-        self.gridTab1.addWidget(self.preTriggerLabel, 5, 0)
-        self.gridTab1.addWidget(self.postTriggerLabel, 6, 0)
-        self.gridTab1.addWidget(self.waveformsLabel, 7, 0)
+        self.gridTab1.addWidget(self.delayLabel, 5, 0)
+        self.gridTab1.addWidget(self.preTriggerLabel, 6, 0)
+        self.gridTab1.addWidget(self.postTriggerLabel, 7, 0)
+        self.gridTab1.addWidget(self.waveformsLabel, 8, 0)
 
         self.gridTab1.addWidget(self.resolutionCombo, 0, 1)
         self.gridTab1.addWidget(self.rangeCombo, 1, 1)
         self.gridTab1.addWidget(self.intervalCombo, 2, 1)
         self.gridTab1.addWidget(self.triggerCombo, 3, 1)
         self.gridTab1.addWidget(self.thresholdSpinBox, 4, 1)
-        self.gridTab1.addWidget(self.preTriggerSamplesSpinBox, 5, 1)
-        self.gridTab1.addWidget(self.postTriggerSamplesSpinBox, 6, 1)
-        self.gridTab1.addWidget(self.waveformsSpinBox, 7, 1)
-        self.gridTab1.addWidget(self.picoConfirmBtn, 8, 1)
+        self.gridTab1.addWidget(self.delaySpinBox, 5, 1)
+        self.gridTab1.addWidget(self.preTriggerSamplesSpinBox, 6, 1)
+        self.gridTab1.addWidget(self.postTriggerSamplesSpinBox, 7, 1)
+        self.gridTab1.addWidget(self.waveformsSpinBox, 8, 1)
+        self.gridTab1.addWidget(self.picoConfirmBtn, 9, 1)
 
         # FUNCTION GENERATOR TAB (TAB 2)
         self.tab2.setLayout(self.gridTab2)
@@ -889,7 +899,7 @@ class tabWidget(QWidget):
         self.pico.close()
         self.pico.setup(range_mV=int(self.rangeCombo.currentText()), blocks=self.waveformsSpinBox.value(),
                         timebase=self.intervalCombo.currentIndex() + 1, external=self.triggerCombo.currentIndex(),
-                        triggermV=self.thresholdSpinBox.value(), preSamples=self.preTriggerSamplesSpinBox.value(),
+                        triggermV=self.thresholdSpinBox.value(), delay = self.delaySpinBox.value(), preSamples=self.preTriggerSamplesSpinBox.value(),
                         postSamples=self.postTriggerSamplesSpinBox.value())
 
         self.feedback_Update.append("Picoscope capture time = " + str(self.pico.getRuntime()) + " ns")
@@ -916,10 +926,6 @@ class tabWidget(QWidget):
         self.Galil.has_handle()
         self.Galil.toggle_handle()
         print("Toggle pressed")
-
-    def createIntensityMap(self):
-        intensityMap = pg.image()
-        return intensityMap
 
     def createPlotWidget(self):
         plotWidget = pg.PlotWidget()

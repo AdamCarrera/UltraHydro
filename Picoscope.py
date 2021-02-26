@@ -137,7 +137,7 @@ class Picoscope(object):
             assert_pico_ok(self.status["changePowerSource"])
 
 
-    def setup(self, range_mV, blocks, timebase, external, triggermV, preSamples, postSamples):
+    def setup(self, range_mV, blocks, timebase, external, triggermV, delay, preSamples, postSamples):
         # Set up channel A
         # handle = chandle
         self.channel = ps.PS5000A_CHANNEL["PS5000A_CHANNEL_A"]
@@ -157,7 +157,7 @@ class Picoscope(object):
         self.timebase = timebase
 
 
-        self.setTrigger(triggermV, external)
+        self.setTrigger(triggermV, external, delay)
 
         self.setWindow(preSamples, postSamples)
         self.getTimebase()
@@ -191,7 +191,7 @@ class Picoscope(object):
         self.average = np.mean(self.data_mVRay[0])
         return average
 
-    def setTrigger(self, triggermV, external):
+    def setTrigger(self, triggermV, external, delay):
         self.threshold = triggermV
         self.external = external
         # Set up single trigger
@@ -204,14 +204,14 @@ class Picoscope(object):
         threshold = int(mV2adc(self.threshold, self.chARange, self.maxADC))
         # direction = PS5000A_RISING = 2
         # delay = 0 s
-        # auto Trigger = 1000 ms
+        # auto Trigger = 0 (never) (whole number for milliseconds)
         if (self.runtimeNs) > 2^16-1 :
             autotriggerDelay = 2^16-1
         else:
             autotriggerDelay = int(self.runtimeNs)
 
         try:
-            self.status["trigger"] = ps.ps5000aSetSimpleTrigger(self.chandle, 1, source, threshold, 2, 0, ctypes.c_int16(0))
+            self.status["trigger"] = ps.ps5000aSetSimpleTrigger(self.chandle, 1, source, threshold, 2, delay, ctypes.c_int16(0))
             assert_pico_ok(self.status["trigger"])
         except:
             print("Invalid picoscope trigger settings")
@@ -542,7 +542,7 @@ if __name__ == '__main__':
 
     pico = Picoscope()
 
-    pico.setup(range_mV=10000, blocks=100, timebase=2, external=True, triggermV=5000, preSamples=0, postSamples=2500)
+    pico.setup(range_mV=10000, blocks=100, timebase=2, external=True, triggermV=5000, delay = 0, preSamples=0, postSamples=2500)
     pico.setSigGen(1500000, 1000000)
 
     pico.block()
