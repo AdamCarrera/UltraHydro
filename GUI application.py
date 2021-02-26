@@ -22,6 +22,7 @@ import numpy as np
 from Picoscope import Picoscope
 from Siglent import FunctionGenerator
 import pyqtgraph as pg
+import time as t
 
 
 class MainWindow(QMainWindow):
@@ -499,6 +500,8 @@ class MainWindow(QMainWindow):
 
     # Jogging Actions
     def scan(self):
+        self.tabWidgetBox.setJogging(False)
+
         print('scan starting')
         try:
             self.Galil.scan(self.scanSize, self.stepSize)
@@ -510,8 +513,8 @@ class MainWindow(QMainWindow):
         self.height = 30
         self.data = np.zeros((self.width, self.height))
 
-        for y in range(30):
-            for x in range(30):
+        for y in range(self.height):
+            for x in range(self.width):
                 self.data.itemset((x, y), (self.width / 2 - abs(self.width / 2 - x)) * (self.height / 2 - abs(self.height / 2 - y)))
                 if x % self.height == 0:
                     self.tabWidgetBox.intensityMap.setImage(self.data)
@@ -616,6 +619,7 @@ class tabWidget(QWidget):
         self.feedback_Update = feedback
         self.screen_resolution = None
         self.pgOffset = {}  # empty dictionary
+        self.jogging = False
 
         if self.screen_resolution is not None:
             if self.screen_resolution.width() > 1920:  # 4K resolution
@@ -715,7 +719,7 @@ class tabWidget(QWidget):
 
         # Pico Tab - Widgets
         self.resolutionCombo = QComboBox(self)
-        self.resolutionCombo.addItems(['8', '12', '14', '15', '16'])
+        self.resolutionCombo.addItems(['12', '14', '15', '16'])
         self.resolutionCombo.setCurrentText(str(self.config["picoscope_resolutionBits"]))
 
         self.rangeCombo = QComboBox(self)
@@ -895,6 +899,9 @@ class tabWidget(QWidget):
 
         self.setLayout(self.mainVbox)
 
+    def setJogging(self, jog):
+        self.jogging = jog
+
     def pico_confirm_data(self):
         self.pico.close()
         self.pico.setup(range_mV=int(self.rangeCombo.currentText()), blocks=self.waveformsSpinBox.value(),
@@ -903,9 +910,20 @@ class tabWidget(QWidget):
                         postSamples=self.postTriggerSamplesSpinBox.value())
 
         self.feedback_Update.append("Picoscope capture time = " + str(self.pico.getRuntime()) + " ns")
+        self.jogging = True
+        startTime = t.time()
+        for i in range(1000):
+            self.displayData()
+        print("100 plots captured in " + str(t.time() - startTime) + " seconds. Display frequency is " + str(100 / (t.time() - startTime)) + "Hz")
+        while self.jogging:
+            self.displayData()
+
+
+    def displayData(self):
         self.pico.block()
         average = np.mean(self.pico.data_mVRay, axis=0)
         self.plotWidget.plot(self.pico.time, average, clear=True)
+        pg.QtGui.QApplication.processEvents()
 
     def func_confirm_data(self):
         self.func = FunctionGenerator(frequency=str(self.freqSpinBox.value()*1000),

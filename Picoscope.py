@@ -542,8 +542,8 @@ if __name__ == '__main__':
 
     pico = Picoscope()
 
-    pico.setup(range_mV=10000, blocks=100, timebase=2, external=True, triggermV=5000, delay = 0, preSamples=0, postSamples=2500)
-    pico.setSigGen(1500000, 1000000)
+    pico.setup(range_mV=10000, blocks=100, timebase=2, external=True, triggermV=5000, delay = 0, preSamples=0, postSamples=250)
+    #pico.setSigGen(1500000, 1000000)
 
     pico.block()
 
