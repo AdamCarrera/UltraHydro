@@ -22,6 +22,7 @@ import numpy as np
 from Picoscope import Picoscope
 from Siglent import FunctionGenerator
 import pyqtgraph as pg
+import time as t
 
 
 class MainWindow(QMainWindow):
@@ -32,6 +33,7 @@ class MainWindow(QMainWindow):
         self.load_parameters()
         self.func = ""
         self.pico = ""
+        self.scanning = False
 
         #app = QApplication(sys.argv)
         #self.screen_resolution = app.desktop().screenGeometry()
@@ -41,16 +43,15 @@ class MainWindow(QMainWindow):
         self.initialize_FunctionGenerator()
         self.initialize_Picoscope()
         self.Galil = Galil()
+        self.feedback_Update = QTextBrowser()
 
         # setting title
         self.setWindowTitle("Ultra Hydrophonics")
 
         # setting geometry
         self.setGeometry(70, 70, 1800, 900)
-
         # calling UI components
         self.ui_components()
-
         # showing all the widgets
         self.show()
         self.path = None
@@ -149,7 +150,8 @@ class MainWindow(QMainWindow):
 
         # HARDWARE SETTINGS - Tab Widget
         # Assigning a variable from the Class tabWidget
-        self.tabWidgetBox = tabWidget(self, self.config, self.pico, self.func)
+
+        self.tabWidgetBox = tabWidget(self, self.config, self.pico, self.func, self.feedback_Update)
 
 
         # Adding Group Boxes to the widget
@@ -377,7 +379,6 @@ class MainWindow(QMainWindow):
         self.feedbackGroupBox.setLayout(self.vbox5)
 
         # Updating feedback message
-        self.feedback_Update = QTextBrowser()
         self.vbox5.addWidget(self.feedback_Update)
         self.feedback_Update.setObjectName("feedback_Update")
 
@@ -488,7 +489,7 @@ class MainWindow(QMainWindow):
         except FileNotFoundError:
             print("local.yaml not found")
 
-        print(self.config)
+        #print(self.config)
     # Updating the program title
 
     def update_title(self):
@@ -499,28 +500,104 @@ class MainWindow(QMainWindow):
 
     # Jogging Actions
     def scan(self):
+        #This will end the graphing loop in the pico_confirm_data function
+        self.tabWidgetBox.set_jogging(False)
+
+        self.scanning = True
+        self.tabWidgetBox.disable_buttons()
+        self.disable_buttons()
+
         print('scan starting')
         try:
             self.Galil.scan(self.scanSize, self.stepSize)
         except:
-            print('Scan failed')
+            print('could not connect to galil')
+            self.end_scan()
 
         #dummy scan code, flesh this out later
         self.width = 30
         self.height = 30
         self.data = np.zeros((self.width, self.height))
 
-        for y in range(30):
-            for x in range(30):
+        for y in range(self.height):
+            for x in range(self.width):
                 self.data.itemset((x, y), (self.width / 2 - abs(self.width / 2 - x)) * (self.height / 2 - abs(self.height / 2 - y)))
                 if x % self.height == 0:
                     self.tabWidgetBox.intensityMap.setImage(self.data)
                     pg.QtGui.QApplication.processEvents()
                 # iv.show()
 
+                if not self.scanning:
+                    self.end_scan()
+                    return
+
+    def disable_buttons(self):
+        self.keyboardCombo.setEnabled(False)
+        self.xDownBtn.setEnabled(False)
+        self.xMaxSb.setEnabled(False)
+        self.xMinSb.setEnabled(False)
+        self.xUpBtn.setEnabled(False)
+        self.Scan.setEnabled(False)
+        self.setHomeBtn.setEnabled(False)
+        self.speedCombo.setEnabled(False)
+        self.saveNotesBtn.setEnabled(False)
+        self.yLoadSb.setEnabled(False)
+        self.yStepSb.setEnabled(False)
+        self.yMaxSb.setEnabled(False)
+        self.xStepSb.setEnabled(False)
+        self.zStepSb.setEnabled(False)
+        self.xLoadSb.setEnabled(False)
+        self.zDownBtn.setEnabled(False)
+        self.yDownBtn.setEnabled(False)
+        self.goHomeBtn.setEnabled(False)
+        self.yMinSb.setEnabled(False)
+        self.yUpBtn.setEnabled(False)
+        self.zMinSb.setEnabled(False)
+        self.zMaxSb.setEnabled(False)
+        self.zUpBtn.setEnabled(False)
+        self.zLoadSb.setEnabled(False)
+
+    def enable_buttons(self):
+        self.keyboardCombo.setEnabled(True)
+        self.xDownBtn.setEnabled(True)
+        self.xMaxSb.setEnabled(True)
+        self.xMinSb.setEnabled(True)
+        self.xUpBtn.setEnabled(True)
+        self.Scan.setEnabled(True)
+        self.setHomeBtn.setEnabled(True)
+        self.speedCombo.setEnabled(True)
+        self.saveNotesBtn.setEnabled(True)
+        self.yLoadSb.setEnabled(True)
+        self.yStepSb.setEnabled(True)
+        self.yMaxSb.setEnabled(True)
+        self.xStepSb.setEnabled(True)
+        self.zStepSb.setEnabled(True)
+        self.xLoadSb.setEnabled(True)
+        self.zDownBtn.setEnabled(True)
+        self.yDownBtn.setEnabled(True)
+        self.goHomeBtn.setEnabled(True)
+        self.yMinSb.setEnabled(True)
+        self.yUpBtn.setEnabled(True)
+        self.zMinSb.setEnabled(True)
+        self.zMaxSb.setEnabled(True)
+        self.zUpBtn.setEnabled(True)
+        self.zLoadSb.setEnabled(True)
+
     def abort_motion(self):
-        self.Galil.abort()
-        print('MOTION ABORTED')
+        self.scanning = False
+
+    #Once the scanning variable is false, the end scan method will be triggered in the scan loop
+
+    def end_scan(self):
+        try:
+            self.Galil.abort()
+            print('MOTION ABORTED')
+        except:
+            print('Could not connect to Galil, to ensure hardware safety, turn the power switch off manually')
+        self.enable_buttons()
+        self.tabWidgetBox.enable_buttons()
+        self.tabWidgetBox.set_jogging(True)
+
 
     def set_origin_pressed(self):
         self.Galil.set_origin()
@@ -576,7 +653,6 @@ class MainWindow(QMainWindow):
             print("Function generator failed to initialize")
 
     def initialize_Picoscope(self):
-        print(self.config["picoscope_blocks"])
 
         try:
             self.pico = Picoscope()
@@ -584,6 +660,7 @@ class MainWindow(QMainWindow):
                             timebase=self.config["picoscope_timebase"],
                             external=self.config["picoscope_externalTrigger"],
                             triggermV=self.config["picoscope_triggermV"],
+                            delay = self.config["picoscope_delay"],
                             preSamples=self.config["picoscope_preSamples"],
                             postSamples=self.config["picoscope_postSamples"])
         except:
@@ -612,9 +689,12 @@ class MainWindow(QMainWindow):
 
 # Tab Widget in its own Class
 class tabWidget(QWidget):
-    def __init__(self, parent, parameters, picoscope, siglent):
+    def __init__(self, parent, parameters, picoscope, siglent, feedback):
+        self.feedback_Update = feedback
         self.screen_resolution = None
         self.pgOffset = {}  # empty dictionary
+        self.jogging = False
+        self.scanning = False
 
         if self.screen_resolution is not None:
             if self.screen_resolution.width() > 1920:  # 4K resolution
@@ -670,11 +750,13 @@ class tabWidget(QWidget):
 
         # self.plotWidget = pg.PlotWidget()
         self.plotWidget = self.createPlotWidget()
-        self.intensityMap = self.createIntensityMap()
 
 
         vbox.addWidget(self.plotWidget)
         self.graphTab1.setLayout(vbox)
+
+
+        self.intensityMap = pg.ImageView()
 
         vbox2.addWidget(self.intensityMap)
         self.graphTab2.setLayout(vbox2)
@@ -689,6 +771,7 @@ class tabWidget(QWidget):
         self.intervalLabel = QLabel()
         self.triggerLabel = QLabel()
         self.thresholdLabel = QLabel()
+        self.delayLabel = QLabel()
         self.preTriggerLabel = QLabel()
         self.postTriggerLabel = QLabel()
         self.waveformsLabel = QLabel()
@@ -698,6 +781,7 @@ class tabWidget(QWidget):
         self.intervalLabel.setText('Sample Interval (ns)')
         self.triggerLabel.setText('Trigger')
         self.thresholdLabel.setText('Trigger Threshold')
+        self.delayLabel.setText('Trigger delay (samples)')
         self.preTriggerLabel.setText('Pre Trigger Samples')
         self.postTriggerLabel.setText('Post Trigger Samples')
         self.waveformsLabel.setText('Number of waveforms to average')
@@ -712,7 +796,7 @@ class tabWidget(QWidget):
 
         # Pico Tab - Widgets
         self.resolutionCombo = QComboBox(self)
-        self.resolutionCombo.addItems(['8', '12', '14', '15', '16'])
+        self.resolutionCombo.addItems(['12', '14', '15', '16'])
         self.resolutionCombo.setCurrentText(str(self.config["picoscope_resolutionBits"]))
 
         self.rangeCombo = QComboBox(self)
@@ -721,7 +805,7 @@ class tabWidget(QWidget):
         self.rangeCombo.setCurrentText(str(self.config["picoscope_rangemV"]))
 
         self.intervalCombo = QComboBox(self)
-        self.intervalCombo.addItems(['2', '4', '8', '16', '32', '64', '128'])
+        self.intervalCombo.addItems(['2', '4', '8', '16', '32', '48', '64', '80', '96', '112', '128', '144'])
         self.intervalCombo.setCurrentText(str(2 ** (self.config["picoscope_timebase"])))
 
         self.triggerCombo = QComboBox(self)
@@ -742,6 +826,11 @@ class tabWidget(QWidget):
         self.preTriggerSamplesSpinBox.setMinimum(0)
         self.preTriggerSamplesSpinBox.setMaximum(self.config["picoscope_samplesMax"])
         self.preTriggerSamplesSpinBox.setValue(self.config["picoscope_preSamples"])
+
+        self.delaySpinBox = QSpinBox()
+        self.delaySpinBox.setMinimum(0)
+        self.delaySpinBox.setMaximum(self.config["picoscope_delayMax"])
+        self.delaySpinBox.setValue(self.config["picoscope_delay"])
 
         self.postTriggerSamplesSpinBox = QSpinBox()
         self.postTriggerSamplesSpinBox.setMinimum(0)
@@ -765,19 +854,21 @@ class tabWidget(QWidget):
         self.gridTab1.addWidget(self.intervalLabel, 2, 0)
         self.gridTab1.addWidget(self.triggerLabel, 3, 0)
         self.gridTab1.addWidget(self.thresholdLabel, 4, 0)
-        self.gridTab1.addWidget(self.preTriggerLabel, 5, 0)
-        self.gridTab1.addWidget(self.postTriggerLabel, 6, 0)
-        self.gridTab1.addWidget(self.waveformsLabel, 7, 0)
+        self.gridTab1.addWidget(self.delayLabel, 5, 0)
+        self.gridTab1.addWidget(self.preTriggerLabel, 6, 0)
+        self.gridTab1.addWidget(self.postTriggerLabel, 7, 0)
+        self.gridTab1.addWidget(self.waveformsLabel, 8, 0)
 
         self.gridTab1.addWidget(self.resolutionCombo, 0, 1)
         self.gridTab1.addWidget(self.rangeCombo, 1, 1)
         self.gridTab1.addWidget(self.intervalCombo, 2, 1)
         self.gridTab1.addWidget(self.triggerCombo, 3, 1)
         self.gridTab1.addWidget(self.thresholdSpinBox, 4, 1)
-        self.gridTab1.addWidget(self.preTriggerSamplesSpinBox, 5, 1)
-        self.gridTab1.addWidget(self.postTriggerSamplesSpinBox, 6, 1)
-        self.gridTab1.addWidget(self.waveformsSpinBox, 7, 1)
-        self.gridTab1.addWidget(self.picoConfirmBtn, 8, 1)
+        self.gridTab1.addWidget(self.delaySpinBox, 5, 1)
+        self.gridTab1.addWidget(self.preTriggerSamplesSpinBox, 6, 1)
+        self.gridTab1.addWidget(self.postTriggerSamplesSpinBox, 7, 1)
+        self.gridTab1.addWidget(self.waveformsSpinBox, 8, 1)
+        self.gridTab1.addWidget(self.picoConfirmBtn, 9, 1)
 
         # FUNCTION GENERATOR TAB (TAB 2)
         self.tab2.setLayout(self.gridTab2)
@@ -885,21 +976,85 @@ class tabWidget(QWidget):
 
         self.setLayout(self.mainVbox)
 
+    #This boolean variable can be set to false to stop the jogging loop
+    def set_jogging(self, jog):
+        self.jogging = jog
+
     def pico_confirm_data(self):
         self.pico.close()
         self.pico.setup(range_mV=int(self.rangeCombo.currentText()), blocks=self.waveformsSpinBox.value(),
                         timebase=self.intervalCombo.currentIndex() + 1, external=self.triggerCombo.currentIndex(),
-                        triggermV=self.thresholdSpinBox.value(), preSamples=self.preTriggerSamplesSpinBox.value(),
+                        triggermV=self.thresholdSpinBox.value(), delay = self.delaySpinBox.value(), preSamples=self.preTriggerSamplesSpinBox.value(),
                         postSamples=self.postTriggerSamplesSpinBox.value())
+
+        self.feedback_Update.append("Picoscope capture time = " + str(self.pico.getRuntime()) + " ns")
+        self.jogging = True
+        startTime = t.time()
+        for i in range(10):
+            self.displayData()
+        print("10 plots displayed in " + str(t.time() - startTime) + " seconds. Display frequency is " + str(100 / (t.time() - startTime)) + "Hz")
+        while self.jogging:
+            self.displayData()
+
+
+    def displayData(self):
         self.pico.block()
         average = np.mean(self.pico.data_mVRay, axis=0)
         self.plotWidget.plot(self.pico.time, average, clear=True)
+        pg.QtGui.QApplication.processEvents()
 
     def func_confirm_data(self):
         self.func = FunctionGenerator(frequency=str(self.freqSpinBox.value()*1000),
                                       amplitude=str(self.amplitudeSpinBox.value()/1000),
                                       period=str(self.periodSpinBox.value()/1000000), cycles=str(self.cyclesSpinBox.value()),
                                       output='ON')
+
+    def disable_buttons(self):
+        self.delaySpinBox.setEnabled(False)
+        self.postTriggerSamplesSpinBox.setEnabled(False)
+        self.preTriggerSamplesSpinBox.setEnabled(False)
+        self.thresholdSpinBox.setEnabled(False)
+        self.triggerCombo.setEnabled(False)
+        self.intervalCombo.setEnabled(False)
+        self.waveformsSpinBox.setEnabled(False)
+        self.rangeCombo.setEnabled(False)
+        self.picoConfirmBtn.setEnabled(False)
+        self.resolutionCombo.setEnabled(False)
+        self.amplitudeSpinBox.setEnabled(False)
+        self.cyclesSpinBox.setEnabled(False)
+        self.connectBtn.setEnabled(False)
+        self.ch2Combo.setEnabled(False)
+        self.ch1Combo.setEnabled(False)
+        self.freqSpinBox.setEnabled(False)
+        self.functionConfirmBtn.setEnabled(False)
+        self.motorsConfirmBtn.setEnabled(False)
+        self.periodSpinBox.setEnabled(False)
+        self.scanSpinBox.setEnabled(False)
+        self.stepSpinBox.setEnabled(False)
+
+    def enable_buttons(self):
+        self.delaySpinBox.setEnabled(True)
+        self.postTriggerSamplesSpinBox.setEnabled(True)
+        self.preTriggerSamplesSpinBox.setEnabled(True)
+        self.thresholdSpinBox.setEnabled(True)
+        self.triggerCombo.setEnabled(True)
+        self.intervalCombo.setEnabled(True)
+        self.waveformsSpinBox.setEnabled(True)
+        self.rangeCombo.setEnabled(True)
+        self.picoConfirmBtn.setEnabled(True)
+        self.resolutionCombo.setEnabled(True)
+        self.amplitudeSpinBox.setEnabled(True)
+        self.cyclesSpinBox.setEnabled(True)
+        self.connectBtn.setEnabled(True)
+        self.ch2Combo.setEnabled(True)
+        self.ch1Combo.setEnabled(True)
+        self.freqSpinBox.setEnabled(True)
+        self.functionConfirmBtn.setEnabled(True)
+        self.motorsConfirmBtn.setEnabled(True)
+        self.periodSpinBox.setEnabled(True)
+        self.scanSpinBox.setEnabled(True)
+        self.stepSpinBox.setEnabled(True)
+
 
     def confirm_Change(self):
         print(self.scanSize)
@@ -914,10 +1069,6 @@ class tabWidget(QWidget):
         self.Galil.has_handle()
         self.Galil.toggle_handle()
         print("Toggle pressed")
-
-    def createIntensityMap(self):
-        intensityMap = pg.image()
-        return intensityMap
 
     def createPlotWidget(self):
         plotWidget = pg.PlotWidget()
@@ -984,11 +1135,11 @@ class tabWidget(QWidget):
         print('origin set')
 
     def scan(self):
-        print('scan starting')
         try:
+            print('Scan starting')
             self.Galil.scan(self.scanSize, self.stepSize)
         except:
-            print("Scan failed")
+            print("Galil not connected")
 
     def closeEvent(self, event):
         bQuit = False

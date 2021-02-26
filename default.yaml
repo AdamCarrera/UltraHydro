@@ -1,6 +1,6 @@
 picoscope_resolutionBits: 16
 picoscope_rangemV: 10000
-picoscope_blocks: 30
+picoscope_blocks: 10
 picoscope_blocksMax: 100
 picoscope_timebase: 2
 picoscope_externalTrigger: True
@@ -9,6 +9,8 @@ picoscope_triggermVMax: 10000
 picoscope_preSamples: 0
 picoscope_postSamples: 2500
 picoscope_samplesMax: 100000
+picoscope_delay: 0
+picoscope_delayMax: 1000
 picoscope_setSigGen: False
 siglent_frequencyHz: '1000000'
 siglent_frequencyHzMax: '10000000'
