@@ -500,9 +500,9 @@ class MainWindow(QMainWindow):
 
     # Jogging Actions
     def scan(self):
+
         #This will end the graphing loop in the pico_confirm_data function
         self.tabWidgetBox.set_jogging(False)
-
         self.scanning = True
         self.tabWidgetBox.disable_buttons()
         self.disable_buttons()
@@ -512,11 +512,10 @@ class MainWindow(QMainWindow):
             self.Galil.scan(self.scanSize, self.stepSize)
         except:
             print('could not connect to galil')
-            self.end_scan()
 
         #dummy scan code, flesh this out later
-        self.width = 30
-        self.height = 30
+        self.width = 1000
+        self.height = 1000
         self.data = np.zeros((self.width, self.height))
 
         for y in range(self.height):
@@ -596,6 +595,7 @@ class MainWindow(QMainWindow):
             print('Could not connect to Galil, to ensure hardware safety, turn the power switch off manually')
         self.enable_buttons()
         self.tabWidgetBox.enable_buttons()
+
         self.tabWidgetBox.set_jogging(True)
 
 
@@ -1135,6 +1135,8 @@ class tabWidget(QWidget):
         print('origin set')
 
     def scan(self):
+        MainWindow.disable_buttons()
+        self.disable_buttons()
         try:
             print('Scan starting')
             self.Galil.scan(self.scanSize, self.stepSize)
