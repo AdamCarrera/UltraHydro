@@ -500,7 +500,9 @@ class MainWindow(QMainWindow):
 
     # Jogging Actions
     def scan(self):
-        self.tabWidgetBox.setJogging(False)
+        self.tabWidgetBox.set_jogging(False)
+        self.tabWidgetBox.disable_buttons()
+        self.disable_buttons()
 
         print('scan starting')
         try:
@@ -521,9 +523,66 @@ class MainWindow(QMainWindow):
                     pg.QtGui.QApplication.processEvents()
                 # iv.show()
 
+    def disable_buttons(self):
+        self.keyboardCombo.setEnabled(False)
+        self.xDownBtn.setEnabled(False)
+        self.xMaxSb.setEnabled(False)
+        self.xMinSb.setEnabled(False)
+        self.xUpBtn.setEnabled(False)
+        self.Scan.setEnabled(False)
+        self.setHomeBtn.setEnabled(False)
+        self.speedCombo.setEnabled(False)
+        self.saveNotesBtn.setEnabled(False)
+        self.yLoadSb.setEnabled(False)
+        self.yStepSb.setEnabled(False)
+        self.yMaxSb.setEnabled(False)
+        self.xStepSb.setEnabled(False)
+        self.zStepSb.setEnabled(False)
+        self.xLoadSb.setEnabled(False)
+        self.zDownBtn.setEnabled(False)
+        self.yDownBtn.setEnabled(False)
+        self.goHomeBtn.setEnabled(False)
+        self.yMinSb.setEnabled(False)
+        self.yUpBtn.setEnabled(False)
+        self.zMinSb.setEnabled(False)
+        self.zMaxSb.setEnabled(False)
+        self.zUpBtn.setEnabled(False)
+        self.zLoadSb.setEnabled(False)
+
+    def enable_buttons(self):
+        self.keyboardCombo.setEnabled(True)
+        self.xDownBtn.setEnabled(True)
+        self.xMaxSb.setEnabled(True)
+        self.xMinSb.setEnabled(True)
+        self.xUpBtn.setEnabled(True)
+        self.Scan.setEnabled(True)
+        self.setHomeBtn.setEnabled(True)
+        self.speedCombo.setEnabled(True)
+        self.saveNotesBtn.setEnabled(True)
+        self.yLoadSb.setEnabled(True)
+        self.yStepSb.setEnabled(True)
+        self.yMaxSb.setEnabled(True)
+        self.xStepSb.setEnabled(True)
+        self.zStepSb.setEnabled(True)
+        self.xLoadSb.setEnabled(True)
+        self.zDownBtn.setEnabled(True)
+        self.yDownBtn.setEnabled(True)
+        self.goHomeBtn.setEnabled(True)
+        self.yMinSb.setEnabled(True)
+        self.yUpBtn.setEnabled(True)
+        self.zMinSb.setEnabled(True)
+        self.zMaxSb.setEnabled(True)
+        self.zUpBtn.setEnabled(True)
+        self.zLoadSb.setEnabled(True)
+
     def abort_motion(self):
-        self.Galil.abort()
-        print('MOTION ABORTED')
+        try:
+            self.Galil.abort()
+            print('MOTION ABORTED')
+        except:
+            print('Could not connect to Galil, to ensure hardware safety, turn the power switch off manually')
+        self.enable_buttons()
+        self.tabWidgetBox.enable_buttons()
 
     def set_origin_pressed(self):
         self.Galil.set_origin()
@@ -899,7 +958,7 @@ class tabWidget(QWidget):
 
         self.setLayout(self.mainVbox)
 
-    def setJogging(self, jog):
+    def set_jogging(self, jog):
         self.jogging = jog
 
     def pico_confirm_data(self):
@@ -912,9 +971,9 @@ class tabWidget(QWidget):
         self.feedback_Update.append("Picoscope capture time = " + str(self.pico.getRuntime()) + " ns")
         self.jogging = True
         startTime = t.time()
-        for i in range(1000):
+        for i in range(10):
             self.displayData()
-        print("100 plots captured in " + str(t.time() - startTime) + " seconds. Display frequency is " + str(100 / (t.time() - startTime)) + "Hz")
+        print("10 plots displayed in " + str(t.time() - startTime) + " seconds. Display frequency is " + str(100 / (t.time() - startTime)) + "Hz")
         while self.jogging:
             self.displayData()
 
@@ -930,6 +989,53 @@ class tabWidget(QWidget):
                                       amplitude=str(self.amplitudeSpinBox.value()/1000),
                                       period=str(self.periodSpinBox.value()/1000000), cycles=str(self.cyclesSpinBox.value()),
                                       output='ON')
+
+    def disable_buttons(self):
+        self.delaySpinBox.setEnabled(False)
+        self.postTriggerSamplesSpinBox.setEnabled(False)
+        self.preTriggerSamplesSpinBox.setEnabled(False)
+        self.thresholdSpinBox.setEnabled(False)
+        self.triggerCombo.setEnabled(False)
+        self.intervalCombo.setEnabled(False)
+        self.waveformsSpinBox.setEnabled(False)
+        self.rangeCombo.setEnabled(False)
+        self.picoConfirmBtn.setEnabled(False)
+        self.resolutionCombo.setEnabled(False)
+        self.amplitudeSpinBox.setEnabled(False)
+        self.cyclesSpinBox.setEnabled(False)
+        self.connectBtn.setEnabled(False)
+        self.ch2Combo.setEnabled(False)
+        self.ch1Combo.setEnabled(False)
+        self.freqSpinBox.setEnabled(False)
+        self.functionConfirmBtn.setEnabled(False)
+        self.motorsConfirmBtn.setEnabled(False)
+        self.periodSpinBox.setEnabled(False)
+        self.scanSpinBox.setEnabled(False)
+        self.stepSpinBox.setEnabled(False)
+
+    def enable_buttons(self):
+        self.delaySpinBox.setEnabled(True)
+        self.postTriggerSamplesSpinBox.setEnabled(True)
+        self.preTriggerSamplesSpinBox.setEnabled(True)
+        self.thresholdSpinBox.setEnabled(True)
+        self.triggerCombo.setEnabled(True)
+        self.intervalCombo.setEnabled(True)
+        self.waveformsSpinBox.setEnabled(True)
+        self.rangeCombo.setEnabled(True)
+        self.picoConfirmBtn.setEnabled(True)
+        self.resolutionCombo.setEnabled(True)
+        self.amplitudeSpinBox.setEnabled(True)
+        self.cyclesSpinBox.setEnabled(True)
+        self.connectBtn.setEnabled(True)
+        self.ch2Combo.setEnabled(True)
+        self.ch1Combo.setEnabled(True)
+        self.freqSpinBox.setEnabled(True)
+        self.functionConfirmBtn.setEnabled(True)
+        self.motorsConfirmBtn.setEnabled(True)
+        self.periodSpinBox.setEnabled(True)
+        self.scanSpinBox.setEnabled(True)
+        self.stepSpinBox.setEnabled(True)
+
 
     def confirm_Change(self):
         print(self.scanSize)
@@ -1010,11 +1116,11 @@ class tabWidget(QWidget):
         print('origin set')
 
     def scan(self):
-        print('scan starting')
         try:
+            print('Scan starting')
             self.Galil.scan(self.scanSize, self.stepSize)
         except:
-            print("Scan failed")
+            print("Galil not connected")
 
     def closeEvent(self, event):
         bQuit = False
