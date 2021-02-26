@@ -33,6 +33,7 @@ class MainWindow(QMainWindow):
         self.load_parameters()
         self.func = ""
         self.pico = ""
+        self.scanning = False
 
         #app = QApplication(sys.argv)
         #self.screen_resolution = app.desktop().screenGeometry()
@@ -49,10 +50,8 @@ class MainWindow(QMainWindow):
 
         # setting geometry
         self.setGeometry(70, 70, 1800, 900)
-
         # calling UI components
         self.ui_components()
-
         # showing all the widgets
         self.show()
         self.path = None
@@ -151,6 +150,7 @@ class MainWindow(QMainWindow):
 
         # HARDWARE SETTINGS - Tab Widget
         # Assigning a variable from the Class tabWidget
+
         self.tabWidgetBox = tabWidget(self, self.config, self.pico, self.func, self.feedback_Update)
 
 
@@ -500,7 +500,10 @@ class MainWindow(QMainWindow):
 
     # Jogging Actions
     def scan(self):
+        #This will end the graphing loop in the pico_confirm_data function
         self.tabWidgetBox.set_jogging(False)
+
+        self.scanning = True
         self.tabWidgetBox.disable_buttons()
         self.disable_buttons()
 
@@ -508,7 +511,7 @@ class MainWindow(QMainWindow):
         try:
             self.Galil.scan(self.scanSize, self.stepSize)
         except:
-            print('Scan failed')
+            print('could not connect to galil')
 
         #dummy scan code, flesh this out later
         self.width = 30
@@ -522,6 +525,10 @@ class MainWindow(QMainWindow):
                     self.tabWidgetBox.intensityMap.setImage(self.data)
                     pg.QtGui.QApplication.processEvents()
                 # iv.show()
+
+                if not self.scanning:
+                    self.end_scan()
+                    return
 
     def disable_buttons(self):
         self.keyboardCombo.setEnabled(False)
@@ -576,6 +583,11 @@ class MainWindow(QMainWindow):
         self.zLoadSb.setEnabled(True)
 
     def abort_motion(self):
+        self.scanning = False
+
+    #Once the scanning variable is false, the end scan method will be triggered in the scan loop
+
+    def end_scan(self):
         try:
             self.Galil.abort()
             print('MOTION ABORTED')
@@ -583,6 +595,8 @@ class MainWindow(QMainWindow):
             print('Could not connect to Galil, to ensure hardware safety, turn the power switch off manually')
         self.enable_buttons()
         self.tabWidgetBox.enable_buttons()
+        self.tabWidgetBox.set_jogging(True)
+
 
     def set_origin_pressed(self):
         self.Galil.set_origin()
@@ -679,6 +693,7 @@ class tabWidget(QWidget):
         self.screen_resolution = None
         self.pgOffset = {}  # empty dictionary
         self.jogging = False
+        self.scanning = False
 
         if self.screen_resolution is not None:
             if self.screen_resolution.width() > 1920:  # 4K resolution
@@ -739,7 +754,9 @@ class tabWidget(QWidget):
         vbox.addWidget(self.plotWidget)
         self.graphTab1.setLayout(vbox)
 
-        self.intensityMap = pg.image()
+
+        self.intensityMap = pg.ImageView()
+
         vbox2.addWidget(self.intensityMap)
         self.graphTab2.setLayout(vbox2)
 
@@ -958,6 +975,7 @@ class tabWidget(QWidget):
 
         self.setLayout(self.mainVbox)
 
+    #This boolean variable can be set to false to stop the jogging loop
     def set_jogging(self, jog):
         self.jogging = jog
 
