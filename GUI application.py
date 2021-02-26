@@ -512,6 +512,7 @@ class MainWindow(QMainWindow):
             self.Galil.scan(self.scanSize, self.stepSize)
         except:
             print('could not connect to galil')
+            self.end_scan()
 
         #dummy scan code, flesh this out later
         self.width = 30
