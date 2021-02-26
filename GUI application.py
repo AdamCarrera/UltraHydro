@@ -598,44 +598,69 @@ class MainWindow(QMainWindow):
         self.tabWidgetBox.enable_buttons()
         self.tabWidgetBox.set_jogging(True)
 
-
     def set_origin_pressed(self):
         self.Galil.set_origin()
         print('origin set')
 
     def X_Up(self):
+        # Check if speed is negative, invert if true
         Progress = "X UP pressed"
         self.feedback_Update.append(str(Progress))
         if self.Galil.jogSpeed['x'] < 0:
             self.Galil.jogSpeed['x'] = self.Galil.jogSpeed['x'] * -1
-        self.Galil.jog()
+        self.Galil.jog('x')
         self.Galil.begin_motion()
         print('jogging!')
 
     def X_Down(self):
-
+        # Check is speed is positive, invert if true
         Progress = "X Down pressed"
         self.feedback_Update.append(str(Progress))
-        self.Galil.jogSpeed['x'] = -1 * self.Galil.jogSpeed['x']
-        self.Galil.jog()
+        if self.Galil.jogSpeed['x'] > 0:
+            self.Galil.jogSpeed['x'] = -1 * self.Galil.jogSpeed['x']
+        self.Galil.jog('x')
         self.Galil.begin_motion()
         print('jogging!')
 
     def Y_Up(self):
+        # Check if Y speed is negative, invert if true
         Progress = "Y UP pressed"
         self.feedback_Update.append(str(Progress))
+        if self.Galil.jogSpeed['y'] < 0:
+            self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
+        self.Galil.jog('y')
+        self.Galil.begin_motion()
+        print('jogging!')
 
     def Y_Down(self):
+        # Check if Y speed is positive, invert if true
         Progress = "Y Down pressed"
         self.feedback_Update.append(str(Progress))
+        if self.Galil.jogSpeed['y'] > 0:
+            self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
+        self.Galil.jog('y')
+        self.Galil.begin_motion()
+        print('jogging!')
 
     def Z_Up(self):
+        # Check if Z speed is negative, invert if true
         Progress = "Z UP pressed"
         self.feedback_Update.append(str(Progress))
+        if self.Galil.jogSpeed['z'] < 0:
+            self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
+        self.Galil.jog('z')
+        self.Galil.begin_motion()
+        print('jogging!')
 
     def Z_Down(self):
+        # Check if Z speed is positive, invert if true
         Progress = "Z Down pressed"
         self.feedback_Update.append(str(Progress))
+        if self.Galil.jogSpeed['z'] > 0:
+            self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
+        self.Galil.jog('z')
+        self.Galil.begin_motion()
+        print('jogging!')
 
     # Open help document
     def Show_Help(self):
