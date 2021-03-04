@@ -151,7 +151,7 @@ class MainWindow(QMainWindow):
         # HARDWARE SETTINGS - Tab Widget
         # Assigning a variable from the Class tabWidget
 
-        self.tabWidgetBox = tabWidget(self, self.config, self.pico, self.func, self.feedback_Update)
+        self.tabWidgetBox = tabWidget(self, self.config, self.pico, self.func, self.feedback_Update, galil=self.Galil)
 
 
         # Adding Group Boxes to the widget
@@ -714,12 +714,17 @@ class MainWindow(QMainWindow):
 
 # Tab Widget in its own Class
 class tabWidget(QWidget):
-    def __init__(self, parent, parameters, picoscope, siglent, feedback):
+    def __init__(self, parent, parameters, picoscope, siglent, feedback, galil=None):
         self.feedback_Update = feedback
         self.screen_resolution = None
         self.pgOffset = {}  # empty dictionary
         self.jogging = False
         self.scanning = False
+
+        if galil is not None:
+            self.Galil = galil
+        else:
+            print('no galil object passed to tab widget')
 
         if self.screen_resolution is not None:
             if self.screen_resolution.width() > 1920:  # 4K resolution
@@ -741,7 +746,7 @@ class tabWidget(QWidget):
         self.func = siglent
 
         super().__init__()
-        self.Galil = Galil()
+        #self.Galil = Galil()
 
         self.config = parameters  # this is the dictionary of parameters from the .yaml files
         self.gridTab1 = QGridLayout()  # Layout for Pico Tab
