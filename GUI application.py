@@ -517,31 +517,39 @@ class MainWindow(QMainWindow):
             self.Galil.scan(self.scanSize, self.stepSize)
         except:
             print('could not connect to galil')
+            self.feedback_Update.append("Could not connect to the Motors")
 
         # dummy scan code, flesh this out later
         self.width = 100
         self.height = 100
         self.data = np.zeros((self.width, self.height))
 
-
+        average = 0
         for y in range(self.height):
             for x in range(self.width):
-                self.data.itemset((x, y), (self.width / 2 - abs(self.width / 2 - x)) * (
-                            self.height / 2 - abs(self.height / 2 - y)))
                 coordinates = str(x) + "," + str(y)
-                print("Scanning " + coordinates)
-
+                #self.tabWidgetBox.displayData()
                 try:
-                    self.scanData.create_dataset(name=coordinates, data=self.data[x][y])
+                    print("Scanning " + coordinates)
+                    self.pico.block()
+                    average = np.mean(self.pico.data_mVRay, axis=0)
+                    self.tabWidgetBox.plotWidget.plot(self.pico.time, average, clear=True)
+                    pg.QtGui.QApplication.processEvents()
+                except:
+                    print("Error collecting data from picoscope")
+                try:
+                    self.scanData.create_dataset(name=coordinates, data=average)
                 except:
                     self.feedback_Update.append("Error writing data, the selected file may already exist")
                     self.end_scan()
                     return
 
-                if x % self.height == 0:
-                    # plots the average across waveforms of captured data from the picoscope
-                    self.tabWidgetBox.intensityMap.setImage(self.data)
-                    pg.QtGui.QApplication.processEvents()
+                self.data.itemset((x, y), average.max())
+
+
+                # plots the average across waveforms of captured data from the picoscope
+                self.tabWidgetBox.intensityMap.setImage(self.data)
+                pg.QtGui.QApplication.processEvents()
                 # iv.show()
 
                 if not self.scanning:
@@ -842,6 +850,7 @@ class tabWidget(QWidget):
         self.preTriggerSamplesSpinBox = QSpinBox()
         self.preTriggerSamplesSpinBox.setMinimum(0)
         self.preTriggerSamplesSpinBox.setMaximum(self.config["picoscope_samplesMax"])
+        self.preTriggerSamplesSpinBox.setMaximum(self.config["picoscope_samplesMax"])
         self.preTriggerSamplesSpinBox.setValue(self.config["picoscope_preSamples"])
 
         self.delaySpinBox = QSpinBox()
@@ -1009,7 +1018,7 @@ class tabWidget(QWidget):
         self.jogging = True
         startTime = t.time()
         for i in range(10):
-            self.displayData()
+           self.displayData()
         print("10 plots displayed in " + str(t.time() - startTime) + " seconds. Display frequency is " + str(
             100 / (t.time() - startTime)) + "Hz")
         while self.jogging:
