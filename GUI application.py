@@ -14,7 +14,7 @@ from PySide2.QtWidgets import (QApplication, QWidget, QTabWidget, QDialog,
                                QMainWindow, QVBoxLayout, QLabel, QPushButton,
                                QFormLayout, QHBoxLayout, QMenuBar, QMenu,
                                QAction, QComboBox, QGroupBox, QSpinBox, QRadioButton, QGridLayout,
-                               QLineEdit, QStatusBar,QFileDialog)
+                               QLineEdit, QStatusBar, QFileDialog)
 
 import h5py
 import yaml
@@ -29,16 +29,16 @@ class MainWindow(QMainWindow):
 
     def __init__(self):  # creates a constructor for the MainWindow Object
         super().__init__()
+        self.scanData = None
         self.config = ""
         self.load_parameters()
         self.func = ""
         self.pico = ""
         self.scanning = False
 
-        #app = QApplication(sys.argv)
-        #self.screen_resolution = app.desktop().screenGeometry()
+        # app = QApplication(sys.argv)
+        # self.screen_resolution = app.desktop().screenGeometry()
         self.screen_resolution = None
-
 
         self.initialize_FunctionGenerator()
         self.initialize_Picoscope()
@@ -56,10 +56,8 @@ class MainWindow(QMainWindow):
         self.show()
         self.path = None
 
-
         self.status = QStatusBar()
         self.setStatusBar(self.status)
-
 
         file_menu = self.menuBar().addMenu("&File")
 
@@ -99,12 +97,9 @@ class MainWindow(QMainWindow):
         Show_Help_action.triggered.connect(self.Show_Help)
         file_menu.addAction(Show_Help_action)
 
-
         edit_menu = self.menuBar().addMenu("&Tools")
 
-
         edit_menu = self.menuBar().addMenu("&Window")
-
 
         edit_menu = self.menuBar().addMenu("&Help")
 
@@ -153,7 +148,6 @@ class MainWindow(QMainWindow):
 
         self.tabWidgetBox = tabWidget(self, self.config, self.pico, self.func, self.feedback_Update)
 
-
         # Adding Group Boxes to the widget
         self.giantGrid1.addWidget(self.tabGroupBox, 0, 0)  # Adds the Group Box to the Grid Layout
         self.vbox1.addWidget(self.tabWidgetBox.tabs)  # Adds Tabs to the Hardware Settings GroupBox
@@ -179,12 +173,10 @@ class MainWindow(QMainWindow):
         # Adding action to the save button
         self.saveNotesBtn.clicked.connect(self.file_save)
 
-
         # Setup the QTextEdit editor configuration
         fixedfont = QFontDatabase.systemFont(QFontDatabase.FixedFont)
         fixedfont.setPointSize(11)
         self.editor.setFont(fixedfont)
-
 
         # Test box under
         self.testGroupBox = QGroupBox('Scan Area Settings')
@@ -308,7 +300,6 @@ class MainWindow(QMainWindow):
         self.AbortBtn.setStyleSheet("background-color: red")
         self.AbortBtn.clicked.connect(self.abort_motion)
 
-
         # Test Box - QComboBox
         self.speedCombo = QComboBox()
         self.speedCombo.addItems(['LOW', 'MEDIUM', 'HIGH'])
@@ -345,7 +336,6 @@ class MainWindow(QMainWindow):
         self.gridScan.addWidget(self.yLoadSb, 8, 2)
         self.gridScan.addWidget(self.zLoadSb, 8, 3)
 
-
         self.gridScan.addWidget(self.blankLabel, 1, 4)  # Blank Label work around to seperate widgets
         self.gridScan.addWidget(self.xUpBtn, 1, 5)
         self.gridScan.addWidget(self.xDownBtn, 1, 6)
@@ -357,7 +347,6 @@ class MainWindow(QMainWindow):
         self.gridScan.addWidget(self.setHomeBtn, 5, 5, 1, 2)
         self.gridScan.addWidget(self.goHomeBtn, 6, 5, 1, 2)
         self.gridScan.addWidget(self.AbortBtn, 8, 5, 1, 5)
-
 
         self.gridScan.addWidget(self.blankLabel2, 1, 7)
         self.gridScan.addWidget(self.speedLabel, 0, 8)
@@ -398,9 +387,10 @@ class MainWindow(QMainWindow):
 
         # Setting the central widget
         self.centralWidget = QWidget()
-        self.centralWidget.setLayout(self.hbox) # Set Central Widget to the layout of the splitter
+        self.centralWidget.setLayout(self.hbox)  # Set Central Widget to the layout of the splitter
         self.setCentralWidget(self.centralWidget)
 
+        # Creates output file, or opens it if it already exists
 
     def dialog_critical(self, s):
         dlg = QMessageBox(self)
@@ -489,47 +479,85 @@ class MainWindow(QMainWindow):
         except FileNotFoundError:
             print("local.yaml not found")
 
-        #print(self.config)
+        # print(self.config)
+
     # Updating the program title
 
     def update_title(self):
-        self.setWindowTitle("%s - Ultra Hydrophonics" % (os.path.basename(self.path.split(".")[0]) if self.path else "Untitled"))
+        self.setWindowTitle(
+            "%s - Ultra Hydrophonics" % (os.path.basename(self.path.split(".")[0]) if self.path else "Untitled"))
 
     def edit_toggle_wrap(self):
-        self.editor.setLineWrapMode( 1 if self.editor.lineWrapMode() == 0 else 0 )
+        self.editor.setLineWrapMode(1 if self.editor.lineWrapMode() == 0 else 0)
 
     # Jogging Actions
     def scan(self):
-        #This will end the graphing loop in the pico_confirm_data function
+        self.feedback_Update.append("Beginning scan")
+        # This will end the graphing loop in the pico_confirm_data function
         self.tabWidgetBox.set_jogging(False)
-
         self.scanning = True
         self.tabWidgetBox.disable_buttons()
         self.disable_buttons()
+
+        Filename = input("Enter file name for scan data:")
+
+        print("creating output file")
+        try:
+            f = h5py.File(Filename + ".hdf5", "a")
+        except:
+            print("unable to create file")
+        # Creates subfolder within the file for scan data
+        try:
+            self.scanData = f.create_group("Scan")
+        except:
+            print("file or HDF5 group already exists")
 
         print('scan starting')
         try:
             self.Galil.scan(self.scanSize, self.stepSize)
         except:
             print('could not connect to galil')
-            self.end_scan()
+            self.feedback_Update.append("Could not connect to the Motors")
 
-        #dummy scan code, flesh this out later
-        self.width = 30
-        self.height = 30
+        # dummy scan code, flesh this out later
+        self.width = 100
+        self.height = 100
         self.data = np.zeros((self.width, self.height))
 
+        average = 0
         for y in range(self.height):
             for x in range(self.width):
-                self.data.itemset((x, y), (self.width / 2 - abs(self.width / 2 - x)) * (self.height / 2 - abs(self.height / 2 - y)))
-                if x % self.height == 0:
-                    self.tabWidgetBox.intensityMap.setImage(self.data)
+                coordinates = str(x) + "," + str(y)
+                #self.tabWidgetBox.displayData()
+                try:
+                    print("Scanning " + coordinates)
+                    self.pico.block()
+                    average = np.mean(self.pico.data_mVRay, axis=0)
+                    self.tabWidgetBox.plotWidget.plot(self.pico.time, average, clear=True)
                     pg.QtGui.QApplication.processEvents()
+                except:
+                    print("Error collecting data from picoscope")
+                try:
+                    self.scanData.create_dataset(name=coordinates, data=average)
+                except:
+                    self.feedback_Update.append("Error writing data, the selected file may already exist")
+                    self.end_scan()
+                    return
+
+                self.data.itemset((x, y), average.max())
+
+
+                # plots the average across waveforms of captured data from the picoscope
+                self.tabWidgetBox.intensityMap.setImage(self.data)
+                pg.QtGui.QApplication.processEvents()
                 # iv.show()
 
                 if not self.scanning:
                     self.end_scan()
                     return
+        self.end_scan()
+
+
 
     def disable_buttons(self):
         self.keyboardCombo.setEnabled(False)
@@ -586,18 +614,20 @@ class MainWindow(QMainWindow):
     def abort_motion(self):
         self.scanning = False
 
-    #Once the scanning variable is false, the end scan method will be triggered in the scan loop
+    # Once the scanning variable is false, the end scan method will be triggered in the scan loop
 
     def end_scan(self):
+        self.feedback_Update.append("Ending scan")
         try:
             self.Galil.abort()
             print('MOTION ABORTED')
         except:
-            print('Could not connect to Galil, to ensure hardware safety, turn the power switch off manually')
+            self.feedback_Update.append(
+                "Could not connect to Galil, to ensure hardware safety, turn the power switch off manually")
         self.enable_buttons()
         self.tabWidgetBox.enable_buttons()
-        self.tabWidgetBox.set_jogging(True)
 
+        self.tabWidgetBox.set_jogging(True)
 
     def set_origin_pressed(self):
         self.Galil.set_origin()
@@ -660,7 +690,7 @@ class MainWindow(QMainWindow):
                             timebase=self.config["picoscope_timebase"],
                             external=self.config["picoscope_externalTrigger"],
                             triggermV=self.config["picoscope_triggermV"],
-                            delay = self.config["picoscope_delay"],
+                            delay=self.config["picoscope_delay"],
                             preSamples=self.config["picoscope_preSamples"],
                             postSamples=self.config["picoscope_postSamples"])
         except:
@@ -731,7 +761,6 @@ class tabWidget(QWidget):
         self.tab2 = QWidget()
         self.tab3 = QWidget()
 
-
         vbox = QVBoxLayout()
         vbox2 = QVBoxLayout()
 
@@ -751,16 +780,13 @@ class tabWidget(QWidget):
         # self.plotWidget = pg.PlotWidget()
         self.plotWidget = self.createPlotWidget()
 
-
         vbox.addWidget(self.plotWidget)
         self.graphTab1.setLayout(vbox)
-
 
         self.intensityMap = pg.ImageView()
 
         vbox2.addWidget(self.intensityMap)
         self.graphTab2.setLayout(vbox2)
-
 
         self.graphTabs.addTab(self.graphTab1, 'Real Time')
         self.graphTabs.addTab(self.graphTab2, 'Pressure Map')
@@ -816,7 +842,6 @@ class tabWidget(QWidget):
         else:
             self.triggerCombo.setCurrentText('External')
 
-
         self.thresholdSpinBox = QSpinBox()
         self.thresholdSpinBox.setMinimum(0)
         self.thresholdSpinBox.setMaximum(self.config["picoscope_triggermVMax"])
@@ -824,6 +849,7 @@ class tabWidget(QWidget):
 
         self.preTriggerSamplesSpinBox = QSpinBox()
         self.preTriggerSamplesSpinBox.setMinimum(0)
+        self.preTriggerSamplesSpinBox.setMaximum(self.config["picoscope_samplesMax"])
         self.preTriggerSamplesSpinBox.setMaximum(self.config["picoscope_samplesMax"])
         self.preTriggerSamplesSpinBox.setValue(self.config["picoscope_preSamples"])
 
@@ -962,7 +988,7 @@ class tabWidget(QWidget):
 
         # Motors Tab - Layout
         self.gridTab3.addWidget(self.connectBtn, 0, 0, 1, 2)
-        #self.gridTab3.addWidget(self.disconnectBtn, 1, 0, 1, 2)
+        # self.gridTab3.addWidget(self.disconnectBtn, 1, 0, 1, 2)
         self.gridTab3.addWidget(self.scanSpinBox, 2, 1)
         self.gridTab3.addWidget(self.stepSpinBox, 3, 1)
         self.gridTab3.addWidget(self.motorsConfirmBtn, 4, 1)
@@ -976,7 +1002,7 @@ class tabWidget(QWidget):
 
         self.setLayout(self.mainVbox)
 
-    #This boolean variable can be set to false to stop the jogging loop
+    # This boolean variable can be set to false to stop the jogging loop
     def set_jogging(self, jog):
         self.jogging = jog
 
@@ -984,18 +1010,19 @@ class tabWidget(QWidget):
         self.pico.close()
         self.pico.setup(range_mV=int(self.rangeCombo.currentText()), blocks=self.waveformsSpinBox.value(),
                         timebase=self.intervalCombo.currentIndex() + 1, external=self.triggerCombo.currentIndex(),
-                        triggermV=self.thresholdSpinBox.value(), delay = self.delaySpinBox.value(), preSamples=self.preTriggerSamplesSpinBox.value(),
+                        triggermV=self.thresholdSpinBox.value(), delay=self.delaySpinBox.value(),
+                        preSamples=self.preTriggerSamplesSpinBox.value(),
                         postSamples=self.postTriggerSamplesSpinBox.value())
 
         self.feedback_Update.append("Picoscope capture time = " + str(self.pico.getRuntime()) + " ns")
         self.jogging = True
         startTime = t.time()
         for i in range(10):
-            self.displayData()
-        print("10 plots displayed in " + str(t.time() - startTime) + " seconds. Display frequency is " + str(100 / (t.time() - startTime)) + "Hz")
+           self.displayData()
+        print("10 plots displayed in " + str(t.time() - startTime) + " seconds. Display frequency is " + str(
+            100 / (t.time() - startTime)) + "Hz")
         while self.jogging:
             self.displayData()
-
 
     def displayData(self):
         self.pico.block()
@@ -1004,9 +1031,10 @@ class tabWidget(QWidget):
         pg.QtGui.QApplication.processEvents()
 
     def func_confirm_data(self):
-        self.func = FunctionGenerator(frequency=str(self.freqSpinBox.value()*1000),
-                                      amplitude=str(self.amplitudeSpinBox.value()/1000),
-                                      period=str(self.periodSpinBox.value()/1000000), cycles=str(self.cyclesSpinBox.value()),
+        self.func = FunctionGenerator(frequency=str(self.freqSpinBox.value() * 1000),
+                                      amplitude=str(self.amplitudeSpinBox.value() / 1000),
+                                      period=str(self.periodSpinBox.value() / 1000000),
+                                      cycles=str(self.cyclesSpinBox.value()),
                                       output='ON')
 
     def disable_buttons(self):
@@ -1054,7 +1082,6 @@ class tabWidget(QWidget):
         self.periodSpinBox.setEnabled(True)
         self.scanSpinBox.setEnabled(True)
         self.stepSpinBox.setEnabled(True)
-
 
     def confirm_Change(self):
         print(self.scanSize)
@@ -1127,6 +1154,7 @@ class tabWidget(QWidget):
         # test the ability to add item to the view
         # bg1 = pg.BarGraphItem(x=time_ms, height=volt_mV, width=0.3, brush='r')
         # plotWidget.addItem(bg1)
+
     def stepSize_changed(self, i):
         self.stepSize = i
 
@@ -1135,6 +1163,8 @@ class tabWidget(QWidget):
         print('origin set')
 
     def scan(self):
+        MainWindow.disable_buttons()
+        self.disable_buttons()
         try:
             print('Scan starting')
             self.Galil.scan(self.scanSize, self.stepSize)
