@@ -282,25 +282,32 @@ class MainWindow(QMainWindow):
 
         # Test Box - QPushButton
         self.xUpBtn = QPushButton('X Up')
-        self.xUpBtn.clicked.connect(self.X_Up)
+        self.xUpBtn.pressed.connect(self.X_Up)
+        self.xUpBtn.released.connect(self.stop_motion)
 
         self.xDownBtn = QPushButton('X Down')
-        self.xDownBtn.clicked.connect(self.X_Down)
+        self.xDownBtn.pressed.connect(self.X_Down)
+        self.xDownBtn.released.connect(self.stop_motion)
 
         self.yUpBtn = QPushButton('Y Up')
-        self.yUpBtn.clicked.connect(self.Y_Up)
+        self.yUpBtn.pressed.connect(self.Y_Up)
+        self.yUpBtn.released.connect(self.stop_motion)
 
         self.yDownBtn = QPushButton('Y Down')
-        self.yDownBtn.clicked.connect(self.Y_Down)
+        self.yDownBtn.pressed.connect(self.Y_Down)
+        self.yDownBtn.released.connect(self.stop_motion)
 
         self.zUpBtn = QPushButton('Z Up')
-        self.zUpBtn.clicked.connect(self.Z_Up)
+        self.zUpBtn.pressed.connect(self.Z_Up)
+        self.zUpBtn.released.connect(self.stop_motion)
 
         self.zDownBtn = QPushButton('Z Down')
-        self.zDownBtn.clicked.connect(self.Z_Down)
+        self.zDownBtn.pressed.connect(self.Z_Down)
+        self.zDownBtn.released.connect(self.stop_motion)
 
         self.setHomeBtn = QPushButton('OK')
         self.setHomeBtn.clicked.connect(self.set_origin_pressed)
+
 
         self.goHomeBtn = QPushButton('Go Home')
 
@@ -661,6 +668,10 @@ class MainWindow(QMainWindow):
         self.Galil.jog('z')
         self.Galil.begin_motion()
         print('jogging!')
+
+    def stop_motion(self):
+        self.Galil.stop_motion()
+        print('stopping motion')
 
     # Open help document
     def Show_Help(self):
@@ -1192,9 +1203,13 @@ class tabWidget(QWidget):
 
 def main():
     app = QApplication(sys.argv)
+    app.setStyle("Fusion")
+    # Enable High DPI display with PySide2
+    app.setAttribute(Qt.AA_EnableHighDpiScaling)
+    if hasattr(QStyleFactory, 'AA_UseHighDpiPixmaps'):
+        app.setAttribute(Qt.AA_UseHighDpiPixmaps)
     window = MainWindow()
     window.show()
-
     sys.exit(app.exec_())
 
 
