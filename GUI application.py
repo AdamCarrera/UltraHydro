@@ -29,6 +29,9 @@ class MainWindow(QMainWindow):
 
     def __init__(self):  # creates a constructor for the MainWindow Object
         super().__init__()
+        self.yEnabled = False
+        self.xEnabled = False
+        self.zEnabled = False
         self.feedback_Update = QTextBrowser()
         self.scanData = None
         self.config = ""
@@ -253,6 +256,7 @@ class MainWindow(QMainWindow):
         self.yCheckBox.toggled.connect(self.checkBox_state)
         self.zCheckBox = QCheckBox('Z-Axis')
         self.zCheckBox.toggled.connect(self.checkBox_state)
+        self.checkBox_state()
 
 
 
@@ -443,7 +447,7 @@ class MainWindow(QMainWindow):
                     # Get the data
                     data = f[a_group_key]
                     print(data["Intensity map"])
-                    self.tabWidgetBox.intensityMap.setImage(data["Intensity map"][:][:][0])
+                    self.tabWidgetBox.intensityMap.setImage(data["Intensity map"][:][:][:])
             except:
                 self.feedback_Update.append("Error loading file, it may have not closed properly")
 
@@ -551,14 +555,25 @@ class MainWindow(QMainWindow):
             self.feedback_Update.append("Could not connect to the motor controller")
 
         # dummy scan code, flesh this out later
-        self.width = 10
-        self.height = 10
-        self.intensity = np.zeros((1, self.width, self.height))
+        if self.xEnabled:
+            self.width = 10
+        else:
+            self.width = 1
+        if self.yEnabled:
+            self.depth = 10
+        else:
+            self.depth = 1
+        if self.zEnabled:
+            self.height = 10
+        else:
+            self.height = 1
+
+        self.intensity = np.zeros((self.width, self.depth, self.height))
 
         average = np.array([])
         counter = 0
-        for x in range(1):
-            for y in range(self.width):
+        for x in range(self.width):
+            for y in range(self.depth):
                 for z in range(self.height):
                     coordinates = str(x) + "," + str(y) + "," + str(z)
                     try:
@@ -585,7 +600,7 @@ class MainWindow(QMainWindow):
                         self.feedback_Update.append("Empty waveform detected at: " + coordinates)
                         self.intensity.itemset((x, y, z), 0)
 
-                    self.tabWidgetBox.intensityMap.setImage(self.intensity[:][:][0])
+                    self.tabWidgetBox.intensityMap.setImage(self.intensity[:][:][:])
                     pg.QtGui.QApplication.processEvents()
                     # iv.show()
                     # plots the average across waveforms of captured data from the picoscope
@@ -601,31 +616,37 @@ class MainWindow(QMainWindow):
 
     # The following functions disable/enable x, y, and z rows.
     def disable_xRow(self):
+        self.xEnabled = False
         self.xMaxSb.setEnabled(False)
         self.xStepSb.setEnabled(False)
         self.xMinSb.setEnabled(False)
 
     def enable_xRow(self):
+        self.xEnabled = True
         self.xMaxSb.setEnabled(True)
         self.xStepSb.setEnabled(True)
         self.xMinSb.setEnabled(True)
 
     def disable_yRow(self):
+        self.yEnabled = False
         self.yMaxSb.setEnabled(False)
         self.yStepSb.setEnabled(False)
         self.yMinSb.setEnabled(False)
 
     def enable_yRow(self):
+        self.yEnabled = True
         self.yMaxSb.setEnabled(True)
         self.yStepSb.setEnabled(True)
         self.yMinSb.setEnabled(True)
 
     def disable_zRow(self):
+        self.zEnabled = False
         self.zMaxSb.setEnabled(False)
         self.zStepSb.setEnabled(False)
         self.zMinSb.setEnabled(False)
 
     def enable_zRow(self):
+        self.zEnabled = True
         self.zMaxSb.setEnabled(True)
         self.zStepSb.setEnabled(True)
         self.zMinSb.setEnabled(True)
@@ -633,19 +654,18 @@ class MainWindow(QMainWindow):
     # checkBox_state is in charge of determing which checkboxes are checked
     def checkBox_state(self):
         if self.xCheckBox.isChecked():
-            self.disable_xRow()
-        else:
             self.enable_xRow()
-
+        else:
+            self.disable_xRow()
         if self.yCheckBox.isChecked():
-            self.disable_yRow()
-        else:
             self.enable_yRow()
-
-        if self.zCheckBox.isChecked():
-            self.disable_zRow()
         else:
+            self.disable_yRow()
+        if self.zCheckBox.isChecked():
             self.enable_zRow()
+        else:
+            self.disable_zRow()
+
 
 
     def disable_buttons(self):
@@ -1207,8 +1227,6 @@ class tabWidget(QWidget):
         self.functionConfirmBtn.setEnabled(False)
         self.motorsConfirmBtn.setEnabled(False)
         self.periodSpinBox.setEnabled(False)
-        self.scanSpinBox.setEnabled(False)
-        self.stepSpinBox.setEnabled(False)
 
     def enable_buttons(self):
         self.delaySpinBox.setEnabled(True)
@@ -1230,8 +1248,6 @@ class tabWidget(QWidget):
         self.functionConfirmBtn.setEnabled(True)
         self.motorsConfirmBtn.setEnabled(True)
         self.periodSpinBox.setEnabled(True)
-        self.scanSpinBox.setEnabled(True)
-        self.stepSpinBox.setEnabled(True)
 
     def confirm_Change(self):
         print(self.scanSize)
