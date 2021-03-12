@@ -29,6 +29,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):  # creates a constructor for the MainWindow Object
         super().__init__()
+        self.feedback_Update = QTextBrowser()
         self.scanData = None
         self.config = ""
         self.load_parameters()
@@ -43,7 +44,6 @@ class MainWindow(QMainWindow):
         self.initialize_FunctionGenerator()
         self.initialize_Picoscope()
         self.Galil = Galil()
-        self.feedback_Update = QTextBrowser()
 
         # setting title
         self.setWindowTitle("Ultra Hydrophonics")
@@ -146,7 +146,7 @@ class MainWindow(QMainWindow):
         # HARDWARE SETTINGS - Tab Widget
         # Assigning a variable from the Class tabWidget
 
-        self.tabWidgetBox = tabWidget(self, self.config, self.pico, self.func, self.feedback_Update)
+        self.tabWidgetBox = tabWidget(self, self.config, self.pico, self.func, self.feedback_Update, galil=self.Galil)
 
         # Adding Group Boxes to the widget
         self.giantGrid1.addWidget(self.tabGroupBox, 0, 0)  # Adds the Group Box to the Grid Layout
@@ -171,7 +171,7 @@ class MainWindow(QMainWindow):
         self.vbox2.addWidget(self.saveNotesBtn)
 
         # Adding action to the save button
-        self.saveNotesBtn.clicked.connect(self.file_save)
+        self.saveNotesBtn.clicked.connect(self.file_saveas)
 
         # Setup the QTextEdit editor configuration
         fixedfont = QFontDatabase.systemFont(QFontDatabase.FixedFont)
@@ -285,25 +285,32 @@ class MainWindow(QMainWindow):
 
         # Test Box - QPushButton
         self.xUpBtn = QPushButton('X Up')
-        self.xUpBtn.clicked.connect(self.X_Up)
+        self.xUpBtn.pressed.connect(self.X_Up)
+        self.xUpBtn.released.connect(self.stop_motion)
 
         self.xDownBtn = QPushButton('X Down')
-        self.xDownBtn.clicked.connect(self.X_Down)
+        self.xDownBtn.pressed.connect(self.X_Down)
+        self.xDownBtn.released.connect(self.stop_motion)
 
         self.yUpBtn = QPushButton('Y Up')
-        self.yUpBtn.clicked.connect(self.Y_Up)
+        self.yUpBtn.pressed.connect(self.Y_Up)
+        self.yUpBtn.released.connect(self.stop_motion)
 
         self.yDownBtn = QPushButton('Y Down')
-        self.yDownBtn.clicked.connect(self.Y_Down)
+        self.yDownBtn.pressed.connect(self.Y_Down)
+        self.yDownBtn.released.connect(self.stop_motion)
 
         self.zUpBtn = QPushButton('Z Up')
-        self.zUpBtn.clicked.connect(self.Z_Up)
+        self.zUpBtn.pressed.connect(self.Z_Up)
+        self.zUpBtn.released.connect(self.stop_motion)
 
         self.zDownBtn = QPushButton('Z Down')
-        self.zDownBtn.clicked.connect(self.Z_Down)
+        self.zDownBtn.pressed.connect(self.Z_Down)
+        self.zDownBtn.released.connect(self.stop_motion)
 
         self.setHomeBtn = QPushButton('Set Home')
         self.setHomeBtn.clicked.connect(self.set_origin_pressed)
+
 
         self.goHomeBtn = QPushButton('Go Home')
 
@@ -415,20 +422,31 @@ class MainWindow(QMainWindow):
 
     # Menu bar Actions
     def file_open(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Open file", "", "HDF5 documents (*.H5);All files (*.*)")
-
-        if path:
+        path, _ = QFileDialog.getOpenFileName(self, "Open file", "", "HDF5 files (*.hdf5); Text documents (*.hdf5 *.txt)")
+        if ".txt" in path:
             try:
-                with open(path, 'rU') as f:
-                    text = f.read()
-
+                with open(path, 'r') as note:
+                    text = note.read()
             except Exception as e:
                 self.dialog_critical(str(e))
-
             else:
-                self.path = path
                 self.editor.setPlainText(text)
-                self.update_title()
+
+        if ".hdf5" in path:
+            self.path = path
+            try:
+                with h5py.File(path, "r") as f:
+                    # List all groups
+                    print("Keys: %s" % f.keys())
+                    a_group_key = list(f.keys())[0]
+
+                    # Get the data
+                    data = f[a_group_key]
+                    print(data["Intensity map"])
+                    self.tabWidgetBox.intensityMap.setImage(data["Intensity map"][:][:][0])
+            except:
+                self.feedback_Update.append("Error loading file, it may have not closed properly")
+
 
     def file_save(self):
 
@@ -439,7 +457,7 @@ class MainWindow(QMainWindow):
         self._save_to_path(self.path)
 
     def file_saveas(self):
-        path, _ = QFileDialog.getSaveFileName(self, "Save file", "", "Text documents (*.txt);All files (*.*)")
+        path, _ = QFileDialog.getSaveFileName(self, "Save file", "", "Text documents (*.txt)")
 
         if not path:
             # If dialog is cancelled, will return ''
@@ -476,47 +494,46 @@ class MainWindow(QMainWindow):
     def load_parameters(self):
         try:
             with open('default.yaml') as file:
-                print("loading parameters from default.yaml")
+                self.feedback_Update.append("Loading parameters from default.yaml")
                 # The FullLoader parameter handles the conversion from YAML
                 # scalar values to Python the dictionary format
                 self.config = yaml.load(file, Loader=yaml.FullLoader)
         except FileNotFoundError:
-            print("default.yaml not found")
+            self.feedback_Update.append("default.yaml not found")
 
         try:
             with open('local.yaml') as file:
-                print("Overriding parameters from default.yaml")
+                self.feedback_Update.append("Overriding parameters from default.yaml")
                 try:
                     changes = yaml.load(file, Loader=yaml.FullLoader)
                     self.cofig.update(changes)
                 except:
                     print("No changes made")
         except FileNotFoundError:
-            print("local.yaml not found")
+            self.feedback_Update.append("Local.yaml not found, no parameters overwritten")
 
         # print(self.config)
 
     # Updating the program title
 
     def update_title(self):
-        self.setWindowTitle(
-            "%s - Ultra Hydrophonics" % (os.path.basename(self.path.split(".")[0]) if self.path else "Untitled"))
+        self.setWindowTitle("%s - Ultra Hydrophonics" % (os.path.basename(self.path.split(".")[0]) if self.path else "Untitled"))
 
     def edit_toggle_wrap(self):
         self.editor.setLineWrapMode(1 if self.editor.lineWrapMode() == 0 else 0)
 
     # Jogging Actions
     def scan(self):
-        self.feedback_Update.append("Beginning scan")
+
         # This will end the graphing loop in the pico_confirm_data function
         self.tabWidgetBox.set_jogging(False)
         self.scanning = True
         self.tabWidgetBox.disable_buttons()
         self.disable_buttons()
 
-        Filename = input("Enter file name for scan data:")
+        Filename, ok = QInputDialog.getText(self, 'New scan', 'Enter file name for scan data:')
 
-        print("creating output file")
+        self.feedback_Update.append("Creating output file: " + Filename + ".hdf5")
         try:
             f = h5py.File(Filename + ".hdf5", "a")
         except:
@@ -525,51 +542,61 @@ class MainWindow(QMainWindow):
         try:
             self.scanData = f.create_group("Scan")
         except:
-            print("file or HDF5 group already exists")
+            self.feedback_Update.append("file or HDF5 group already exists")
 
-        print('scan starting')
+        self.feedback_Update.append("Beginning scan")
         try:
             self.Galil.scan(self.scanSize, self.stepSize)
         except:
-            print('could not connect to galil')
-            self.feedback_Update.append("Could not connect to the Motors")
+            self.feedback_Update.append("Could not connect to the motor controller")
 
         # dummy scan code, flesh this out later
-        self.width = 100
-        self.height = 100
-        self.data = np.zeros((self.width, self.height))
+        self.width = 10
+        self.height = 10
+        self.intensity = np.zeros((1, self.width, self.height))
 
-        average = 0
-        for y in range(self.height):
-            for x in range(self.width):
-                coordinates = str(x) + "," + str(y)
-                #self.tabWidgetBox.displayData()
-                try:
-                    print("Scanning " + coordinates)
-                    self.pico.block()
-                    average = np.mean(self.pico.data_mVRay, axis=0)
-                    self.tabWidgetBox.plotWidget.plot(self.pico.time, average, clear=True)
+        average = np.array([])
+        counter = 0
+        for x in range(1):
+            for y in range(self.width):
+                for z in range(self.height):
+                    coordinates = str(x) + "," + str(y) + "," + str(z)
+                    try:
+                        print("Scanning " + coordinates)
+                        self.pico.block()
+                        average = np.mean(self.pico.data_mVRay, axis=0)
+                        self.tabWidgetBox.plotWidget.plot(self.pico.time, average, clear=True)
+                        pg.QtGui.QApplication.processEvents()
+                    except:
+                        self.feedback_Update.append("Error collecting data from picoscope")
+                        f.close()
+                        self.end_scan()
+                        return
+                    try:
+                        self.scanData.create_dataset(name=coordinates, data=average)
+                    except:
+                        self.feedback_Update.append("Error writing data, the selected file may already exist")
+                        f.close()
+                        self.end_scan()
+                        return
+                    try:
+                        self.intensity.itemset((x, y, z), average.max())
+                    except ValueError:
+                        self.feedback_Update.append("Empty waveform detected at: " + coordinates)
+                        self.intensity.itemset((x, y, z), 0)
+
+                    self.tabWidgetBox.intensityMap.setImage(self.intensity[:][:][0])
                     pg.QtGui.QApplication.processEvents()
-                except:
-                    print("Error collecting data from picoscope")
-                try:
-                    self.scanData.create_dataset(name=coordinates, data=average)
-                except:
-                    self.feedback_Update.append("Error writing data, the selected file may already exist")
-                    self.end_scan()
-                    return
+                    # iv.show()
+                    # plots the average across waveforms of captured data from the picoscope
+                    counter = counter + 1
+                    if not self.scanning:
+                        f.close()
+                        self.end_scan()
+                        return
 
-                self.data.itemset((x, y), average.max())
-
-
-                # plots the average across waveforms of captured data from the picoscope
-                self.tabWidgetBox.intensityMap.setImage(self.data)
-                pg.QtGui.QApplication.processEvents()
-                # iv.show()
-
-                if not self.scanning:
-                    self.end_scan()
-                    return
+        self.scanData.create_dataset(name="Intensity map", data=self.intensity)
+        f.close()
         self.end_scan()
 
     # The following functions disable/enable x, y, and z rows.
@@ -619,6 +646,7 @@ class MainWindow(QMainWindow):
             self.disable_zRow()
         else:
             self.enable_zRow()
+
 
     def disable_buttons(self):
         self.keyboardCombo.setEnabled(False)
@@ -690,7 +718,7 @@ class MainWindow(QMainWindow):
             print('MOTION ABORTED')
         except:
             self.feedback_Update.append(
-                "Could not connect to Galil, to ensure hardware safety, turn the power switch off manually")
+                "Could not connect to motor controller. If the robot is moving, turn the power switch off manually")
         self.enable_buttons()
         self.tabWidgetBox.enable_buttons()
 
@@ -701,38 +729,68 @@ class MainWindow(QMainWindow):
         print('origin set')
 
     def X_Up(self):
+        # Check if speed is negative, invert if true
         Progress = "X UP pressed"
         self.feedback_Update.append(str(Progress))
         if self.Galil.jogSpeed['x'] < 0:
             self.Galil.jogSpeed['x'] = self.Galil.jogSpeed['x'] * -1
-        self.Galil.jog()
+        self.Galil.jog('x')
         self.Galil.begin_motion()
         print('jogging!')
 
     def X_Down(self):
-
+        # Check is speed is positive, invert if true
         Progress = "X Down pressed"
         self.feedback_Update.append(str(Progress))
-        self.Galil.jogSpeed['x'] = -1 * self.Galil.jogSpeed['x']
-        self.Galil.jog()
+        if self.Galil.jogSpeed['x'] > 0:
+            self.Galil.jogSpeed['x'] = -1 * self.Galil.jogSpeed['x']
+        self.Galil.jog('x')
         self.Galil.begin_motion()
         print('jogging!')
 
     def Y_Up(self):
+        # Check if Y speed is negative, invert if true
         Progress = "Y UP pressed"
         self.feedback_Update.append(str(Progress))
+        if self.Galil.jogSpeed['y'] < 0:
+            self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
+        self.Galil.jog('y')
+        self.Galil.begin_motion()
+        print('jogging!')
 
     def Y_Down(self):
+        # Check if Y speed is positive, invert if true
         Progress = "Y Down pressed"
         self.feedback_Update.append(str(Progress))
+        if self.Galil.jogSpeed['y'] > 0:
+            self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
+        self.Galil.jog('y')
+        self.Galil.begin_motion()
+        print('jogging!')
 
     def Z_Up(self):
+        # Check if Z speed is negative, invert if true
         Progress = "Z UP pressed"
         self.feedback_Update.append(str(Progress))
+        if self.Galil.jogSpeed['z'] < 0:
+            self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
+        self.Galil.jog('z')
+        self.Galil.begin_motion()
+        print('jogging!')
 
     def Z_Down(self):
+        # Check if Z speed is positive, invert if true
         Progress = "Z Down pressed"
         self.feedback_Update.append(str(Progress))
+        if self.Galil.jogSpeed['z'] > 0:
+            self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
+        self.Galil.jog('z')
+        self.Galil.begin_motion()
+        print('jogging!')
+
+    def stop_motion(self):
+        self.Galil.stop_motion()
+        print('stopping motion')
 
     # Open help document
     def Show_Help(self):
@@ -747,7 +805,7 @@ class MainWindow(QMainWindow):
                                           cycles=self.config["siglent_cycles"],
                                           output=self.config["siglent_output"])
         except:
-            print("Function generator failed to initialize")
+            self.feedback_Update.append("Function generator failed to connect, make sure one is connected and restart")
 
     def initialize_Picoscope(self):
 
@@ -761,7 +819,7 @@ class MainWindow(QMainWindow):
                             preSamples=self.config["picoscope_preSamples"],
                             postSamples=self.config["picoscope_postSamples"])
         except:
-            print("Picoscope failed to connect")
+            self.feedback_Update.append("Oscilliscope failed to connect, make sure one is connected and restart")
 
     # Adding a warning when close button is pressed
     def closeEvent(self, event):
@@ -786,12 +844,17 @@ class MainWindow(QMainWindow):
 
 # Tab Widget in its own Class
 class tabWidget(QWidget):
-    def __init__(self, parent, parameters, picoscope, siglent, feedback):
+    def __init__(self, parent, parameters, picoscope, siglent, feedback, galil=None):
         self.feedback_Update = feedback
         self.screen_resolution = None
         self.pgOffset = {}  # empty dictionary
         self.jogging = False
         self.scanning = False
+
+        if galil is not None:
+            self.Galil = galil
+        else:
+            print('no galil object passed to tab widget')
 
         if self.screen_resolution is not None:
             if self.screen_resolution.width() > 1920:  # 4K resolution
@@ -813,7 +876,7 @@ class tabWidget(QWidget):
         self.func = siglent
 
         super().__init__()
-        self.Galil = Galil()
+        #self.Galil = Galil()
 
         self.config = parameters  # this is the dictionary of parameters from the .yaml files
         self.gridTab1 = QGridLayout()  # Layout for Pico Tab
@@ -836,7 +899,7 @@ class tabWidget(QWidget):
         self.graphTab2 = QWidget()
 
         # Add tabs
-        self.tabs.addTab(self.tab1, "Picoscope")
+        self.tabs.addTab(self.tab1, "Oscilloscope")
         self.tabs.addTab(self.tab2, "Function Generator")
         self.tabs.addTab(self.tab3, "Motors")
 
@@ -1081,6 +1144,7 @@ class tabWidget(QWidget):
         self.jogging = jog
 
     def pico_confirm_data(self):
+        self.jogging = False
         self.pico.close()
         self.pico.setup(range_mV=int(self.rangeCombo.currentText()), blocks=self.waveformsSpinBox.value(),
                         timebase=self.intervalCombo.currentIndex() + 1, external=self.triggerCombo.currentIndex(),
@@ -1089,12 +1153,24 @@ class tabWidget(QWidget):
                         postSamples=self.postTriggerSamplesSpinBox.value())
 
         self.feedback_Update.append("Picoscope capture time = " + str(self.pico.getRuntime()) + " ns")
+
+
+        self.pico.block()
+        average = np.mean(self.pico.data_mVRay, axis=0)
+        print("Standard deviation of signal (mV) = " + str(np.std(average)))
+        self.plotWidget.plot(self.pico.time, average, clear=True)
+        pg.QtGui.QApplication.processEvents()
+
         self.jogging = True
         startTime = t.time()
         for i in range(10):
-           self.displayData()
-        print("10 plots displayed in " + str(t.time() - startTime) + " seconds. Display frequency is " + str(
-            100 / (t.time() - startTime)) + "Hz")
+            if self.jogging == False:
+                return
+            self.displayData()
+
+        self.feedback_Update.append("10 Plots displayed in " + str(t.time() - startTime) + " seconds. Display frequency is " + str(
+            10 / (t.time() - startTime)) + "Hz")
+
         while self.jogging:
             self.displayData()
 
@@ -1175,16 +1251,15 @@ class tabWidget(QWidget):
         plotWidget = pg.PlotWidget()
         color = self.palette().color(QPalette.Window)  # Get the default window background,
         plotWidget.setBackground(color)
-        time_ms = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-        # volt_mV = np.array([30, 32, 34, 32, 33, 31, 29, 32, 35, 45])
-        volt_mV = np.sin(time_ms) + 10
+
+
         # plot data: x, y values
         # self.pen = pg.mkPen(color='#52988C', width=1, style=Qt.SolidLine, join=Qt.RoundJoin, cap=Qt.RoundCap)
-        self.pen = pg.mkPen(color='#52988C', width=1)
+        #self.pen = pg.mkPen(color='#52988C', width=1)
         # test the ability to add item to the view
         # bg1 = pg.BarGraphItem(x=time_ms, height=volt_mV, width=0.3, brush='r')
         # plotWidget.addItem(bg1)
-        self._plot = plotWidget.plot(time_ms, volt_mV, pen=self.pen)
+        self._plot = plotWidget.plot()
         # Add Background color to white
         plotWidget.setBackground('#202227')
         # Add Title
@@ -1192,7 +1267,7 @@ class tabWidget(QWidget):
         # Add Axis Labels
         styles = {"color": "#EDEDED", "font-size": "10pt"}
         plotWidget.setLabel("left", "Voltage (mV)", **styles)
-        plotWidget.setLabel("bottom", "Time (ms)", **styles)
+        plotWidget.setLabel("bottom", "Time (ns)", **styles)
         font = QFont()
         font.setPixelSize(30)
         plotWidget.getAxis("bottom").tickFont = font
@@ -1228,7 +1303,6 @@ class tabWidget(QWidget):
         # test the ability to add item to the view
         # bg1 = pg.BarGraphItem(x=time_ms, height=volt_mV, width=0.3, brush='r')
         # plotWidget.addItem(bg1)
-
     def stepSize_changed(self, i):
         self.stepSize = i
 
@@ -1266,9 +1340,13 @@ class tabWidget(QWidget):
 
 def main():
     app = QApplication(sys.argv)
+    app.setStyle("Fusion")
+    # Enable High DPI display with PySide2
+    app.setAttribute(Qt.AA_EnableHighDpiScaling)
+    if hasattr(QStyleFactory, 'AA_UseHighDpiPixmaps'):
+        app.setAttribute(Qt.AA_UseHighDpiPixmaps)
     window = MainWindow()
     window.show()
-
     sys.exit(app.exec_())
 
 
