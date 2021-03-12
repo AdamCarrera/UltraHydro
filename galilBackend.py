@@ -8,12 +8,19 @@ class Galil:
     def __init__(self):
         self.handle = gclib.py()                         # Initialize the library object
 
+        self.axes = ['x', 'y', 'z']
+
         self.jogging = False
         self.jogSpeed = {}
         self.jogSpeed['x'] = 100000                        # YAML FILE
+        self.jogSpeed['y'] = 100000
+        self.jogSpeed['z'] = 100000
+
 
         self.speed = {}
         self.speed['x'] = 100000                           # YAML FILE
+        self.speed['y'] = 100000
+        self.speed['z'] = 100000
 
         self.xCal = 10                                   # YAML FILE
 
@@ -63,11 +70,31 @@ class Galil:
         self.handle.GCommand('AB')
         print('Motion Aborted')
 
-    def jog(self):
-        self.handle.GCommand('JG %d' % self.jogSpeed['x'])  # yaml file value
+    def jog(self, axe):
+        # Try sending jog command to Galil, except an error if that fails
+        if axe == 'x':
+            try:
+                self.handle.GCommand('JG %d' % self.jogSpeed['x'])  # yaml file value
+            except gclib.GclibError as e:
+                print("Cannot jog: {0}".format(e))
+        elif axe == 'y':
+            try:
+                self.handle.GCommand('JG ,%d' % self.jogSpeed['y'])  # yaml file value
+            except gclib.GclibError as e:
+                print("Cannot jog: {0}".format(e))
+        elif axe == 'z':
+            try:
+                self.handle.GCommand('JG , ,%d' % self.jogSpeed['z'])  # yaml file value
+            except gclib.GclibError as e:
+                print("Cannot jog: {0}".format(e))
+        else:
+            raise Exception('Incompatible axis')
 
     def begin_motion(self):
-        self.handle.GCommand('BG A')
+        try:
+            self.handle.GCommand('BG A')
+        except gclib.GclibError as e:
+            print("Cannot begin motion, {0}".format(e))
 
     def stop_motion(self):
         self.handle.GCommand('ST')
