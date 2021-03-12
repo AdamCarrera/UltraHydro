@@ -472,23 +472,23 @@ class MainWindow(QMainWindow):
     def load_parameters(self):
         try:
             with open('default.yaml') as file:
-                print("loading parameters from default.yaml")
+                self.feedback_Update.append("Loading parameters from default.yaml")
                 # The FullLoader parameter handles the conversion from YAML
                 # scalar values to Python the dictionary format
                 self.config = yaml.load(file, Loader=yaml.FullLoader)
         except FileNotFoundError:
-            print("default.yaml not found")
+            self.feedback_Update.append("default.yaml not found")
 
         try:
             with open('local.yaml') as file:
-                print("Overriding parameters from default.yaml")
+                self.feedback_Update.append("Overriding parameters from default.yaml")
                 try:
                     changes = yaml.load(file, Loader=yaml.FullLoader)
                     self.cofig.update(changes)
                 except:
                     print("No changes made")
         except FileNotFoundError:
-            print("local.yaml not found")
+            self.feedback_Update.append("Local.yaml not found, no parameters overwritten")
 
         # print(self.config)
 
@@ -535,7 +535,7 @@ class MainWindow(QMainWindow):
         self.height = 10
         self.intensity = np.zeros((1, self.width, self.height))
 
-        average = 0
+        average = []
         counter = 0
         for x in range(1):
             for y in range(self.width):
@@ -548,7 +548,7 @@ class MainWindow(QMainWindow):
                         self.tabWidgetBox.plotWidget.plot(self.pico.time, average, clear=True)
                         pg.QtGui.QApplication.processEvents()
                     except:
-                        print("Error collecting data from picoscope")
+                        self.feedback_Update.append("Error collecting data from picoscope")
                     try:
                         self.scanData.create_dataset(name=coordinates, data=average)
                     except:
@@ -695,7 +695,7 @@ class MainWindow(QMainWindow):
                                           cycles=self.config["siglent_cycles"],
                                           output=self.config["siglent_output"])
         except:
-            self.feedback_Update.append("Function generator failed to initialize")
+            self.feedback_Update.append("Function generator failed to connect, make sure one is connected and restart")
 
     def initialize_Picoscope(self):
 
@@ -709,7 +709,7 @@ class MainWindow(QMainWindow):
                             preSamples=self.config["picoscope_preSamples"],
                             postSamples=self.config["picoscope_postSamples"])
         except:
-            self.feedback_Update.append("Oscilliscope failed to connect")
+            self.feedback_Update.append("Oscilliscope failed to connect, make sure one is connected and restart")
 
     # Adding a warning when close button is pressed
     def closeEvent(self, event):
