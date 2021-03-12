@@ -171,7 +171,7 @@ class MainWindow(QMainWindow):
         self.vbox2.addWidget(self.saveNotesBtn)
 
         # Adding action to the save button
-        self.saveNotesBtn.clicked.connect(self.file_save)
+        self.saveNotesBtn.clicked.connect(self.file_saveas)
 
         # Setup the QTextEdit editor configuration
         fixedfont = QFontDatabase.systemFont(QFontDatabase.FixedFont)
@@ -400,30 +400,30 @@ class MainWindow(QMainWindow):
 
     # Menu bar Actions
     def file_open(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Open file", "", "HDF5 documents (*.H5);All files (*.*)")
-        print(path)
-        if path:
+        path, _ = QFileDialog.getOpenFileName(self, "Open file", "", "HDF5 files (*.hdf5); Text documents (*.hdf5 *.txt)")
+        if ".txt" in path:
             try:
-                with open(path, 'r') as f:
-                    text = f.read()
-
+                with open(path, 'r') as note:
+                    text = note.read()
             except Exception as e:
                 self.dialog_critical(str(e))
-
             else:
-                self.path = path
                 self.editor.setPlainText(text)
-                self.update_title()
 
-        with h5py.File(path, "r") as f:
-            # List all groups
-            print("Keys: %s" % f.keys())
-            a_group_key = list(f.keys())[0]
+        if ".hdf5" in path:
+            self.path = path
+            try:
+                with h5py.File(path, "r") as f:
+                    # List all groups
+                    print("Keys: %s" % f.keys())
+                    a_group_key = list(f.keys())[0]
 
-            # Get the data
-            data = f[a_group_key]
-            print(data["Intensity map"])
-            self.tabWidgetBox.intensityMap.setImage(data["Intensity map"][:][:][0])
+                    # Get the data
+                    data = f[a_group_key]
+                    print(data["Intensity map"])
+                    self.tabWidgetBox.intensityMap.setImage(data["Intensity map"][:][:][0])
+            except:
+                self.feedback_Update.append("Error loading file, it may have not closed properly")
 
 
     def file_save(self):
@@ -435,7 +435,7 @@ class MainWindow(QMainWindow):
         self._save_to_path(self.path)
 
     def file_saveas(self):
-        path, _ = QFileDialog.getSaveFileName(self, "Save file", "", "Text documents (*.txt);All files (*.*)")
+        path, _ = QFileDialog.getSaveFileName(self, "Save file", "", "Text documents (*.txt)")
 
         if not path:
             # If dialog is cancelled, will return ''
@@ -503,7 +503,7 @@ class MainWindow(QMainWindow):
 
     # Jogging Actions
     def scan(self):
-        self.feedback_Update.append("Beginning scan")
+
         # This will end the graphing loop in the pico_confirm_data function
         self.tabWidgetBox.set_jogging(False)
         self.scanning = True
@@ -523,19 +523,18 @@ class MainWindow(QMainWindow):
         except:
             self.feedback_Update.append("file or HDF5 group already exists")
 
-        print('scan starting')
+        self.feedback_Update.append("Beginning scan")
         try:
             self.Galil.scan(self.scanSize, self.stepSize)
         except:
-            print('could not connect to motor controller')
-            self.feedback_Update.append("Could not connect to the Motors")
+            self.feedback_Update.append("Could not connect to the motor controller")
 
         # dummy scan code, flesh this out later
         self.width = 10
         self.height = 10
         self.intensity = np.zeros((1, self.width, self.height))
 
-        average = []
+        average = np.array([])
         counter = 0
         for x in range(1):
             for y in range(self.width):
@@ -549,14 +548,22 @@ class MainWindow(QMainWindow):
                         pg.QtGui.QApplication.processEvents()
                     except:
                         self.feedback_Update.append("Error collecting data from picoscope")
+                        f.close()
+                        self.end_scan()
+                        return
                     try:
                         self.scanData.create_dataset(name=coordinates, data=average)
                     except:
                         self.feedback_Update.append("Error writing data, the selected file may already exist")
+                        f.close()
                         self.end_scan()
                         return
+                    try:
+                        self.intensity.itemset((x, y, z), average.max())
+                    except ValueError:
+                        self.feedback_Update.append("Empty waveform detected at: " + coordinates)
+                        self.intensity.itemset((x, y, z), 0)
 
-                    self.intensity.itemset((x, y, z), average.max())
                     self.tabWidgetBox.intensityMap.setImage(self.intensity[:][:][0])
                     pg.QtGui.QApplication.processEvents()
                     # iv.show()
