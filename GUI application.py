@@ -575,6 +575,11 @@ class MainWindow(QMainWindow):
         for x in range(self.width):
             for y in range(self.depth):
                 for z in range(self.height):
+                    if not self.scanning:
+                        self.f.close()
+                        self.end_scan()
+                        return
+
                     coordinates = str(x) + "," + str(y) + "," + str(z)
                     try:
                         print("Scanning " + coordinates)
@@ -604,11 +609,6 @@ class MainWindow(QMainWindow):
                     pg.QtGui.QApplication.processEvents()
                     # iv.show()
                     # plots the average across waveforms of captured data from the picoscope
-
-                    if not self.scanning:
-                        self.f.close()
-                        self.end_scan()
-                        return
 
         self.scanData.create_dataset(name="Intensity map", data=self.intensity)
         self.f.close()
