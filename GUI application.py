@@ -146,7 +146,7 @@ class MainWindow(QMainWindow):
         # HARDWARE SETTINGS - Tab Widget
         # Assigning a variable from the Class tabWidget
 
-        self.tabWidgetBox = tabWidget(self, self.config, self.pico, self.func, self.feedback_Update)
+        self.tabWidgetBox = tabWidget(self, self.config, self.pico, self.func, self.feedback_Update, galil=self.Galil)
 
         # Adding Group Boxes to the widget
         self.giantGrid1.addWidget(self.tabGroupBox, 0, 0)  # Adds the Group Box to the Grid Layout
@@ -274,25 +274,32 @@ class MainWindow(QMainWindow):
 
         # Test Box - QPushButton
         self.xUpBtn = QPushButton('X Up')
-        self.xUpBtn.clicked.connect(self.X_Up)
+        self.xUpBtn.pressed.connect(self.X_Up)
+        self.xUpBtn.released.connect(self.stop_motion)
 
         self.xDownBtn = QPushButton('X Down')
-        self.xDownBtn.clicked.connect(self.X_Down)
+        self.xDownBtn.pressed.connect(self.X_Down)
+        self.xDownBtn.released.connect(self.stop_motion)
 
         self.yUpBtn = QPushButton('Y Up')
-        self.yUpBtn.clicked.connect(self.Y_Up)
+        self.yUpBtn.pressed.connect(self.Y_Up)
+        self.yUpBtn.released.connect(self.stop_motion)
 
         self.yDownBtn = QPushButton('Y Down')
-        self.yDownBtn.clicked.connect(self.Y_Down)
+        self.yDownBtn.pressed.connect(self.Y_Down)
+        self.yDownBtn.released.connect(self.stop_motion)
 
         self.zUpBtn = QPushButton('Z Up')
-        self.zUpBtn.clicked.connect(self.Z_Up)
+        self.zUpBtn.pressed.connect(self.Z_Up)
+        self.zUpBtn.released.connect(self.stop_motion)
 
         self.zDownBtn = QPushButton('Z Down')
-        self.zDownBtn.clicked.connect(self.Z_Down)
+        self.zDownBtn.pressed.connect(self.Z_Down)
+        self.zDownBtn.released.connect(self.stop_motion)
 
         self.setHomeBtn = QPushButton('OK')
         self.setHomeBtn.clicked.connect(self.set_origin_pressed)
+
 
         self.goHomeBtn = QPushButton('Go Home')
 
@@ -495,8 +502,7 @@ class MainWindow(QMainWindow):
     # Updating the program title
 
     def update_title(self):
-        self.setWindowTitle(
-            "%s - Ultra Hydrophonics" % (os.path.basename(self.path.split(".")[0]) if self.path else "Untitled"))
+        self.setWindowTitle("%s - Ultra Hydrophonics" % (os.path.basename(self.path.split(".")[0]) if self.path else "Untitled"))
 
     def edit_toggle_wrap(self):
         self.editor.setLineWrapMode(1 if self.editor.lineWrapMode() == 0 else 0)
@@ -656,38 +662,68 @@ class MainWindow(QMainWindow):
         print('origin set')
 
     def X_Up(self):
+        # Check if speed is negative, invert if true
         Progress = "X UP pressed"
         self.feedback_Update.append(str(Progress))
         if self.Galil.jogSpeed['x'] < 0:
             self.Galil.jogSpeed['x'] = self.Galil.jogSpeed['x'] * -1
-        self.Galil.jog()
+        self.Galil.jog('x')
         self.Galil.begin_motion()
         print('jogging!')
 
     def X_Down(self):
-
+        # Check is speed is positive, invert if true
         Progress = "X Down pressed"
         self.feedback_Update.append(str(Progress))
-        self.Galil.jogSpeed['x'] = -1 * self.Galil.jogSpeed['x']
-        self.Galil.jog()
+        if self.Galil.jogSpeed['x'] > 0:
+            self.Galil.jogSpeed['x'] = -1 * self.Galil.jogSpeed['x']
+        self.Galil.jog('x')
         self.Galil.begin_motion()
         print('jogging!')
 
     def Y_Up(self):
+        # Check if Y speed is negative, invert if true
         Progress = "Y UP pressed"
         self.feedback_Update.append(str(Progress))
+        if self.Galil.jogSpeed['y'] < 0:
+            self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
+        self.Galil.jog('y')
+        self.Galil.begin_motion()
+        print('jogging!')
 
     def Y_Down(self):
+        # Check if Y speed is positive, invert if true
         Progress = "Y Down pressed"
         self.feedback_Update.append(str(Progress))
+        if self.Galil.jogSpeed['y'] > 0:
+            self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
+        self.Galil.jog('y')
+        self.Galil.begin_motion()
+        print('jogging!')
 
     def Z_Up(self):
+        # Check if Z speed is negative, invert if true
         Progress = "Z UP pressed"
         self.feedback_Update.append(str(Progress))
+        if self.Galil.jogSpeed['z'] < 0:
+            self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
+        self.Galil.jog('z')
+        self.Galil.begin_motion()
+        print('jogging!')
 
     def Z_Down(self):
+        # Check if Z speed is positive, invert if true
         Progress = "Z Down pressed"
         self.feedback_Update.append(str(Progress))
+        if self.Galil.jogSpeed['z'] > 0:
+            self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
+        self.Galil.jog('z')
+        self.Galil.begin_motion()
+        print('jogging!')
+
+    def stop_motion(self):
+        self.Galil.stop_motion()
+        print('stopping motion')
 
     # Open help document
     def Show_Help(self):
@@ -741,12 +777,17 @@ class MainWindow(QMainWindow):
 
 # Tab Widget in its own Class
 class tabWidget(QWidget):
-    def __init__(self, parent, parameters, picoscope, siglent, feedback):
+    def __init__(self, parent, parameters, picoscope, siglent, feedback, galil=None):
         self.feedback_Update = feedback
         self.screen_resolution = None
         self.pgOffset = {}  # empty dictionary
         self.jogging = False
         self.scanning = False
+
+        if galil is not None:
+            self.Galil = galil
+        else:
+            print('no galil object passed to tab widget')
 
         if self.screen_resolution is not None:
             if self.screen_resolution.width() > 1920:  # 4K resolution
@@ -768,7 +809,7 @@ class tabWidget(QWidget):
         self.func = siglent
 
         super().__init__()
-        self.Galil = Galil()
+        #self.Galil = Galil()
 
         self.config = parameters  # this is the dictionary of parameters from the .yaml files
         self.gridTab1 = QGridLayout()  # Layout for Pico Tab
@@ -1188,7 +1229,6 @@ class tabWidget(QWidget):
         # test the ability to add item to the view
         # bg1 = pg.BarGraphItem(x=time_ms, height=volt_mV, width=0.3, brush='r')
         # plotWidget.addItem(bg1)
-
     def stepSize_changed(self, i):
         self.stepSize = i
 
@@ -1226,9 +1266,13 @@ class tabWidget(QWidget):
 
 def main():
     app = QApplication(sys.argv)
+    app.setStyle("Fusion")
+    # Enable High DPI display with PySide2
+    app.setAttribute(Qt.AA_EnableHighDpiScaling)
+    if hasattr(QStyleFactory, 'AA_UseHighDpiPixmaps'):
+        app.setAttribute(Qt.AA_UseHighDpiPixmaps)
     window = MainWindow()
     window.show()
-
     sys.exit(app.exec_())
 
 
