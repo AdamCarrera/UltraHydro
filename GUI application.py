@@ -34,10 +34,11 @@ class MainWindow(QMainWindow):
         self.zEnabled = False
         self.feedback_Update = QTextBrowser()
         self.scanData = None
-        self.config = ""
+        self.config = None
         self.load_parameters()
-        self.func = ""
-        self.pico = ""
+        self.func = None
+        self.pico = None
+        self.f = None
         self.scanning = False
 
         # app = QApplication(sys.argv)
@@ -318,16 +319,15 @@ class MainWindow(QMainWindow):
 
         self.goHomeBtn = QPushButton('Go Home')
 
-        self.AbortBtn = QPushButton('Abort')
-        self.AbortBtn.setStyleSheet("background-color: red")
-        self.AbortBtn.clicked.connect(self.abort_motion)
-
-
         # Test Box - QComboBox
         self.speedCombo = QComboBox()
         self.speedCombo.addItems(['LOW', 'MEDIUM', 'HIGH'])
         self.keyboardCombo = QComboBox()
         self.keyboardCombo.addItems(['OFF', 'ON'])
+
+        self.AbortBtn = QPushButton('Abort')
+        self.AbortBtn.setStyleSheet("background-color: red")
+        self.AbortBtn.pressed.connect(self.abort_button)
 
         # Organizing into a grid
         self.giantGrid1.addWidget(self.testGroupBox, 1, 0, 1, 2)  # extends column & row size of groupbox
@@ -539,12 +539,12 @@ class MainWindow(QMainWindow):
 
         self.feedback_Update.append("Creating output file: " + Filename + ".hdf5")
         try:
-            f = h5py.File(Filename + ".hdf5", "a")
+            self.f = h5py.File(Filename + ".hdf5", "a")
         except:
             print("unable to create file")
         # Creates subfolder within the file for scan data
         try:
-            self.scanData = f.create_group("Scan")
+            self.scanData = self.f.create_group("Scan")
         except:
             self.feedback_Update.append("file or HDF5 group already exists")
 
@@ -584,14 +584,14 @@ class MainWindow(QMainWindow):
                         pg.QtGui.QApplication.processEvents()
                     except:
                         self.feedback_Update.append("Error collecting data from picoscope")
-                        f.close()
+                        self.f.close()
                         self.end_scan()
                         return
                     try:
                         self.scanData.create_dataset(name=coordinates, data=average)
                     except:
                         self.feedback_Update.append("Error writing data, the selected file may already exist")
-                        f.close()
+                        self.f.close()
                         self.end_scan()
                         return
                     try:
@@ -604,14 +604,14 @@ class MainWindow(QMainWindow):
                     pg.QtGui.QApplication.processEvents()
                     # iv.show()
                     # plots the average across waveforms of captured data from the picoscope
-                    counter = counter + 1
+
                     if not self.scanning:
-                        f.close()
+                        self.f.close()
                         self.end_scan()
                         return
 
         self.scanData.create_dataset(name="Intensity map", data=self.intensity)
-        f.close()
+        self.f.close()
         self.end_scan()
 
     # The following functions disable/enable x, y, and z rows.
@@ -725,13 +725,17 @@ class MainWindow(QMainWindow):
         self.xCheckBox.setEnabled(True)
         self.yCheckBox.setEnabled(True)
         self.zCheckBox.setEnabled(True)
+        self.checkBox_state()
 
-    def abort_motion(self):
+    @Slot(int)
+    def abort_button(self):
         self.scanning = False
 
     # Once the scanning variable is false, the end scan method will be triggered in the scan loop
-
     def end_scan(self):
+        if self.f is not None:
+            self.f.close()
+        self.scanning = False
         self.feedback_Update.append("Ending scan")
         try:
             self.Galil.abort()
