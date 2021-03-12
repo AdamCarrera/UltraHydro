@@ -245,6 +245,17 @@ class MainWindow(QMainWindow):
         self.yLoadSb = QSpinBox()
         self.zLoadSb = QSpinBox()
 
+        # Scan Area - QCheckBoxes
+        # Figureing out how to turn on and off function
+        self.xCheckBox = QCheckBox('X-Axis')
+        self.xCheckBox.toggled.connect(self.checkBox_state)
+        self.yCheckBox = QCheckBox('Y-Axis')
+        self.yCheckBox.toggled.connect(self.checkBox_state)
+        self.zCheckBox = QCheckBox('Z-Axis')
+        self.zCheckBox.toggled.connect(self.checkBox_state)
+
+
+
         # Test Box - Resizing Widgets
         # self.xMinSb.setFixedWidth(100)
         # self.xMaxSb.setFixedWidth(100)
@@ -297,7 +308,7 @@ class MainWindow(QMainWindow):
         self.zDownBtn.pressed.connect(self.Z_Down)
         self.zDownBtn.released.connect(self.stop_motion)
 
-        self.setHomeBtn = QPushButton('OK')
+        self.setHomeBtn = QPushButton('Set Home')
         self.setHomeBtn.clicked.connect(self.set_origin_pressed)
 
 
@@ -306,6 +317,7 @@ class MainWindow(QMainWindow):
         self.AbortBtn = QPushButton('Abort')
         self.AbortBtn.setStyleSheet("background-color: red")
         self.AbortBtn.clicked.connect(self.abort_motion)
+
 
         # Test Box - QComboBox
         self.speedCombo = QComboBox()
@@ -319,9 +331,12 @@ class MainWindow(QMainWindow):
         self.gridScan.addWidget(self.minLabel, 0, 1, 1, 1)
         self.gridScan.addWidget(self.stepLabel, 0, 2, 1, 1)
         self.gridScan.addWidget(self.maxLabel, 0, 3, 1, 1)
-        self.gridScan.addWidget(self.xAxisLabel, 1, 0, 1, 1)
-        self.gridScan.addWidget(self.yAxisLabel, 2, 0, 1, 1)
-        self.gridScan.addWidget(self.zAxisLabel, 3, 0, 1, 1)
+        #self.gridScan.addWidget(self.xAxisLabel, 1, 0, 1, 1) REMOVE THIS LATER
+        self.gridScan.addWidget(self.xCheckBox, 1, 0)
+        #self.gridScan.addWidget(self.yAxisLabel, 2, 0, 1, 1)
+        self.gridScan.addWidget(self.yCheckBox, 2, 0)
+        #self.gridScan.addWidget(self.zAxisLabel, 3, 0, 1, 1)
+        self.gridScan.addWidget(self.zCheckBox, 3, 0)
 
         self.gridScan.addWidget(self.xMinSb, 1, 1)
         self.gridScan.addWidget(self.xStepSb, 1, 2)
@@ -338,10 +353,10 @@ class MainWindow(QMainWindow):
         self.gridScan.addWidget(self.xPosition, 6, 1)
         self.gridScan.addWidget(self.yPosition, 6, 2)
         self.gridScan.addWidget(self.zPosition, 6, 3)
-        self.gridScan.addWidget(self.loadLabel, 7, 2)
-        self.gridScan.addWidget(self.xLoadSb, 8, 1)
-        self.gridScan.addWidget(self.yLoadSb, 8, 2)
-        self.gridScan.addWidget(self.zLoadSb, 8, 3)
+        #self.gridScan.addWidget(self.loadLabel, 7, 2)
+        #self.gridScan.addWidget(self.xLoadSb, 8, 1)
+        #self.gridScan.addWidget(self.yLoadSb, 8, 2)
+        #self.gridScan.addWidget(self.zLoadSb, 8, 3) REMOVE THESE LATER
 
         self.gridScan.addWidget(self.blankLabel, 1, 4)  # Blank Label work around to seperate widgets
         self.gridScan.addWidget(self.xUpBtn, 1, 5)
@@ -350,16 +365,16 @@ class MainWindow(QMainWindow):
         self.gridScan.addWidget(self.yDownBtn, 2, 6)
         self.gridScan.addWidget(self.zUpBtn, 3, 5)
         self.gridScan.addWidget(self.zDownBtn, 3, 6)
-        self.gridScan.addWidget(self.homeLabel, 4, 5, 1, 2)
+        #self.gridScan.addWidget(self.homeLabel, 4, 5, 1, 2) Remove these later
         self.gridScan.addWidget(self.setHomeBtn, 5, 5, 1, 2)
         self.gridScan.addWidget(self.goHomeBtn, 6, 5, 1, 2)
-        self.gridScan.addWidget(self.AbortBtn, 8, 5, 1, 5)
+        self.gridScan.addWidget(self.AbortBtn, 7, 1, 1, 3)
 
         self.gridScan.addWidget(self.blankLabel2, 1, 7)
-        self.gridScan.addWidget(self.speedLabel, 0, 8)
-        self.gridScan.addWidget(self.speedCombo, 1, 8)
-        self.gridScan.addWidget(self.keyboardLabel, 2, 8)
-        self.gridScan.addWidget(self.keyboardCombo, 3, 8)
+        #self.gridScan.addWidget(self.speedLabel, 0, 8)
+        #self.gridScan.addWidget(self.speedCombo, 1, 8)
+        #self.gridScan.addWidget(self.keyboardLabel, 2, 8)
+        #self.gridScan.addWidget(self.keyboardCombo, 3, 8) REMOVE THESE FOR LATER
 
         # Plot Box
         self.plotGroupBox = QGroupBox('Graph Box')
@@ -584,7 +599,53 @@ class MainWindow(QMainWindow):
         f.close()
         self.end_scan()
 
+    # The following functions disable/enable x, y, and z rows.
+    def disable_xRow(self):
+        self.xMaxSb.setEnabled(False)
+        self.xStepSb.setEnabled(False)
+        self.xMinSb.setEnabled(False)
 
+    def enable_xRow(self):
+        self.xMaxSb.setEnabled(True)
+        self.xStepSb.setEnabled(True)
+        self.xMinSb.setEnabled(True)
+
+    def disable_yRow(self):
+        self.yMaxSb.setEnabled(False)
+        self.yStepSb.setEnabled(False)
+        self.yMinSb.setEnabled(False)
+
+    def enable_yRow(self):
+        self.yMaxSb.setEnabled(True)
+        self.yStepSb.setEnabled(True)
+        self.yMinSb.setEnabled(True)
+
+    def disable_zRow(self):
+        self.zMaxSb.setEnabled(False)
+        self.zStepSb.setEnabled(False)
+        self.zMinSb.setEnabled(False)
+
+    def enable_zRow(self):
+        self.zMaxSb.setEnabled(True)
+        self.zStepSb.setEnabled(True)
+        self.zMinSb.setEnabled(True)
+
+    # checkBox_state is in charge of determing which checkboxes are checked
+    def checkBox_state(self):
+        if self.xCheckBox.isChecked():
+            self.disable_xRow()
+        else:
+            self.enable_xRow()
+
+        if self.yCheckBox.isChecked():
+            self.disable_yRow()
+        else:
+            self.enable_yRow()
+
+        if self.zCheckBox.isChecked():
+            self.disable_zRow()
+        else:
+            self.enable_zRow()
 
 
     def disable_buttons(self):
@@ -612,6 +673,9 @@ class MainWindow(QMainWindow):
         self.zMaxSb.setEnabled(False)
         self.zUpBtn.setEnabled(False)
         self.zLoadSb.setEnabled(False)
+        self.xCheckBox.setEnabled(False)
+        self.yCheckBox.setEnabled(False)
+        self.zCheckBox.setEnabled(False)
 
     def enable_buttons(self):
         self.keyboardCombo.setEnabled(True)
@@ -638,6 +702,9 @@ class MainWindow(QMainWindow):
         self.zMaxSb.setEnabled(True)
         self.zUpBtn.setEnabled(True)
         self.zLoadSb.setEnabled(True)
+        self.xCheckBox.setEnabled(True)
+        self.yCheckBox.setEnabled(True)
+        self.zCheckBox.setEnabled(True)
 
     def abort_motion(self):
         self.scanning = False
@@ -1028,23 +1095,29 @@ class tabWidget(QWidget):
         self.tab3.setLayout(self.gridTab3)  # Setting the Layout for the widgets
 
         # Motors Tab - Widgets
-        self.scanLabel = QLabel()
-        self.stepLabel = QLabel()
+        self.keyboardLabel = QLabel()
+        self.speedLabel = QLabel()
 
-        self.scanLabel.setText('Scan Size')
-        self.stepLabel.setText('Step Size')
+        self.keyboardLabel.setText('Keyboard Control')
+        self.speedLabel.setText('Speed')
 
-        self.scanLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        self.stepLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.keyboardLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.speedLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+
+        self.speedCombo = QComboBox()
+        self.speedCombo.addItems(['LOW', 'MEDIUM', 'HIGH'])
+        self.keyboardCombo = QComboBox()
+        self.keyboardCombo.addItems(['OFF', 'ON'])
 
         self.connectBtn = QPushButton('Toggle Connection')
         self.connectBtn.pressed.connect(self.toggle_connection)
 
-        self.scanSpinBox = QSpinBox()
-        self.scanSpinBox.valueChanged.connect(self.scanSize_changed)
+        #Removing for now as it is redundant
+        #self.scanSpinBox = QSpinBox()
+        #self.scanSpinBox.valueChanged.connect(self.scanSize_changed)
 
-        self.stepSpinBox = QSpinBox()
-        self.stepSpinBox.valueChanged.connect(self.stepSize_changed)
+        #self.stepSpinBox = QSpinBox()
+        #self.stepSpinBox.valueChanged.connect(self.stepSize_changed)
 
         self.motorsConfirmBtn = QPushButton('Confirm Settings')
         self.motorsConfirmBtn.pressed.connect(self.confirm_Change)
@@ -1052,12 +1125,13 @@ class tabWidget(QWidget):
         # Motors Tab - Layout
         self.gridTab3.addWidget(self.connectBtn, 0, 0, 1, 2)
         # self.gridTab3.addWidget(self.disconnectBtn, 1, 0, 1, 2)
-        self.gridTab3.addWidget(self.scanSpinBox, 2, 1)
-        self.gridTab3.addWidget(self.stepSpinBox, 3, 1)
+        self.gridTab3.addWidget(self.keyboardCombo, 2, 1)
+        self.gridTab3.addWidget(self.speedCombo, 3, 1)
+
         self.gridTab3.addWidget(self.motorsConfirmBtn, 4, 1)
 
-        self.gridTab3.addWidget(self.scanLabel, 2, 0)
-        self.gridTab3.addWidget(self.stepLabel, 3, 0)
+        self.gridTab3.addWidget(self.keyboardLabel, 2, 0)
+        self.gridTab3.addWidget(self.speedLabel, 3, 0)
 
         # Add ALL tabs to widget
         self.mainVbox.addWidget(self.tabs)
