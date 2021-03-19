@@ -41,6 +41,13 @@ class MainWindow(QMainWindow):
         self.f = None
         self.scanning = False
 
+        self.width = 1
+        self.depth = 1
+        self.height = 1
+        self.xCoordinates = np.zeros(1)
+        self.yCoordinates = np.zeros(1)
+        self.zCoordinates = np.zeros(1)
+
         # app = QApplication(sys.argv)
         # self.screen_resolution = app.desktop().screenGeometry()
         self.screen_resolution = None
@@ -554,19 +561,30 @@ class MainWindow(QMainWindow):
         except:
             self.feedback_Update.append("Could not connect to the motor controller")
 
-        # dummy scan code, flesh this out later
         if self.xEnabled:
-            self.width = 10
+            self.width = int((self.xMaxSb.value() - self.xMinSb.value())/self.xStepSb.value()) + 1
+            self.xCoordinates = np.linspace(self.xMinSb.value(), self.xMaxSb.value(), self.width)
+            self.feedback_Update.append("X axis width = " + str(self.width) + " samples")
+            print(self.xCoordinates)
         else:
             self.width = 1
+            self.xCoordinates = np.zeros(1)
         if self.yEnabled:
-            self.depth = 10
+            self.depth = int((self.yMaxSb.value() - self.yMinSb.value())/self.yStepSb.value()) + 1
+            self.yCoordinates = np.linspace(self.yMinSb.value(), self.yMaxSb.value(), self.depth)
+            self.feedback_Update.append("Y axis depth = " + str(self.depth) + " samples")
+            print(self.yCoordinates)
         else:
             self.depth = 1
+            self.yCoordinates = np.zeros(1)
         if self.zEnabled:
-            self.height = 10
+            self.height = int((self.zMaxSb.value() - self.zMinSb.value())/self.zStepSb.value()) + 1
+            self.zCoordinates = np.linspace(self.zMinSb.value(), self.zMaxSb.value(), self.height)
+            self.feedback_Update.append("Z axis height = " + str(self.height) + " samples")
+            print(self.zCoordinates)
         else:
             self.height = 1
+            self.zCoordinates = np.zeros(1)
 
         self.intensity = np.zeros((self.width, self.depth, self.height))
 
@@ -884,17 +902,18 @@ class tabWidget(QWidget):
             if self.screen_resolution.width() > 1920:  # 4K resolution
                 self.left = 100
                 self.top = 100
-                self.width = 3000
-                self.height = 1000
+                self.screen_width = 3000
+                self.screen_height = 1000
                 self.pgHoffset = 105
                 self.pgWoffset = 125
         else:  # full HD
             self.left = 50
             self.top = 50
-            self.width = 1500
-            self.height = 750
+            self.screen_width = 1500
+            self.screen_height = 750
             self.pgHoffset = 55
             self.pgWoffset = 75
+
 
         self.pico = picoscope
         self.func = siglent
