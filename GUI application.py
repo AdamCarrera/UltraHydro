@@ -212,9 +212,9 @@ class MainWindow(QMainWindow):
         # Test Box - Label: Assigning Names
         # SCAN AREA - LABELS: Assigning Names
         # Assigned the names for the labels
-        self.minLabel.setText('Min')
+        self.minLabel.setText('Negative limit (mm)')
         self.samplesLabel.setText('# Samples')
-        self.maxLabel.setText('Max')
+        self.maxLabel.setText('Positive limit (mm)')
         self.xAxisLabel.setText('X-Axis')
         self.yAxisLabel.setText('Y-Axis')
         self.zAxisLabel.setText('Z-Axis')
@@ -239,15 +239,30 @@ class MainWindow(QMainWindow):
         self.loadLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
 
         # Test Box - SpinBox
-        self.xMinSb = QSpinBox()  # x-axis min spinbox
-        self.xMaxSb = QSpinBox()  # x-axis max spinbox
+        self.xMinSb = QDoubleSpinBox()  # x-axis min spinbox
+        self.xMinSb.setRange(-1*self.config["galil_xLimit"], 0)
+        self.xMinSb.setSingleStep(self.config["galil_step"])
+        self.xMaxSb = QDoubleSpinBox()  # x-axis max spinbox
+        self.xMaxSb.setRange(0, self.config["galil_xLimit"])
+        self.xMaxSb.setSingleStep(self.config["galil_step"])
         self.xSamplesSb = QSpinBox()  # x-axis step spinbox
-        self.yMinSb = QSpinBox()  # y-axis min spinbox
-        self.yMaxSb = QSpinBox()  # y-axis max spinbox
+        self.xSamplesSb.setRange(1, self.config["galil_maxSamples"])
+        self.yMinSb = QDoubleSpinBox()  # y-axis min spinbox
+        self.yMinSb.setRange(-1 * self.config["galil_yLimit"], 0)
+        self.yMinSb.setSingleStep(self.config["galil_step"])
+        self.yMaxSb = QDoubleSpinBox()  # y-axis max spinbox
+        self.yMaxSb.setRange(0, self.config["galil_yLimit"])
+        self.yMaxSb.setSingleStep(self.config["galil_step"])
         self.ySamplesSb = QSpinBox()  # y-axis step spinbox
-        self.zMinSb = QSpinBox()  # z-axis min spinbox
-        self.zMaxSb = QSpinBox()  # z-axis max spinbox
+        self.ySamplesSb.setRange(1, self.config["galil_maxSamples"])
+        self.zMinSb = QDoubleSpinBox()  # z-axis min spinbox
+        self.zMinSb.setRange(-1 * self.config["galil_zLimit"], 0)
+        self.zMinSb.setSingleStep(self.config["galil_step"])
+        self.zMaxSb = QDoubleSpinBox()  # z-axis max spinbox
+        self.zMaxSb.setRange(0, self.config["galil_zLimit"])
+        self.zMaxSb.setSingleStep(self.config["galil_step"])
         self.zSamplesSb = QSpinBox()  # z-axis step spinbox
+        self.zSamplesSb.setRange(1, self.config["galil_maxSamples"])
 
         self.Scan = QPushButton('Scan')
         self.Scan.pressed.connect(self.scan)
