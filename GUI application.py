@@ -196,7 +196,7 @@ class MainWindow(QMainWindow):
 
         # Test Box: Widgets
         self.minLabel = QLabel()
-        self.stepLabel = QLabel()
+        self.samplesLabel = QLabel()
         self.maxLabel = QLabel()
         self.xAxisLabel = QLabel()
         self.yAxisLabel = QLabel()
@@ -213,7 +213,7 @@ class MainWindow(QMainWindow):
         # SCAN AREA - LABELS: Assigning Names
         # Assigned the names for the labels
         self.minLabel.setText('Min')
-        self.stepLabel.setText('Step')
+        self.samplesLabel.setText('# Samples')
         self.maxLabel.setText('Max')
         self.xAxisLabel.setText('X-Axis')
         self.yAxisLabel.setText('Y-Axis')
@@ -231,7 +231,7 @@ class MainWindow(QMainWindow):
         self.zAxisLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)  # Aligning label horizontally
         self.minLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)  # Aligning label horizontally
         self.maxLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)  # Aligning label horizontally
-        self.stepLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)  # Aligning label horizontally
+        self.samplesLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)  # Aligning label horizontally
         self.positionLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         self.homeLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         self.speedLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
@@ -241,13 +241,13 @@ class MainWindow(QMainWindow):
         # Test Box - SpinBox
         self.xMinSb = QSpinBox()  # x-axis min spinbox
         self.xMaxSb = QSpinBox()  # x-axis max spinbox
-        self.xStepSb = QSpinBox()  # x-axis step spinbox
+        self.xSamplesSb = QSpinBox()  # x-axis step spinbox
         self.yMinSb = QSpinBox()  # y-axis min spinbox
         self.yMaxSb = QSpinBox()  # y-axis max spinbox
-        self.yStepSb = QSpinBox()  # y-axis step spinbox
+        self.ySamplesSb = QSpinBox()  # y-axis step spinbox
         self.zMinSb = QSpinBox()  # z-axis min spinbox
         self.zMaxSb = QSpinBox()  # z-axis max spinbox
-        self.zStepSb = QSpinBox()  # z-axis step spinbox
+        self.zSamplesSb = QSpinBox()  # z-axis step spinbox
 
         self.Scan = QPushButton('Scan')
         self.Scan.pressed.connect(self.scan)
@@ -271,20 +271,20 @@ class MainWindow(QMainWindow):
         # Test Box - Resizing Widgets
         # self.xMinSb.setFixedWidth(100)
         # self.xMaxSb.setFixedWidth(100)
-        # self.xStepSb.setFixedWidth(100)
+        # self.xSamplesSb.setFixedWidth(100)
         # self.yMinSb.setFixedWidth(100)
         # self.yMaxSb.setFixedWidth(100)
-        # self.yStepSb.setFixedWidth(100)
+        # self.ySamplesSb.setFixedWidth(100)
         # self.zMinSb.setFixedWidth(100)
         # self.zMaxSb.setFixedWidth(100)
-        # self.zStepSb.setFixedWidth(100)
+        # self.zSamplesSb.setFixedWidth(100)
 
         # self.minLabel.setFixedWidth(100)
         self.minLabel.setFixedHeight(50)
         # self.maxLabel.setFixedWidth(100)
         self.maxLabel.setFixedHeight(50)
-        # self.stepLabel.setFixedWidth(100)
-        self.stepLabel.setFixedHeight(50)
+        # self.samplesLabel.setFixedWidth(100)
+        self.samplesLabel.setFixedHeight(50)
         self.homeLabel.setFixedHeight(50)
 
         # Test Box - QLineEdit
@@ -340,7 +340,7 @@ class MainWindow(QMainWindow):
         self.giantGrid1.addWidget(self.testGroupBox, 1, 0, 1, 2)  # extends column & row size of groupbox
 
         self.gridScan.addWidget(self.minLabel, 0, 1, 1, 1)
-        self.gridScan.addWidget(self.stepLabel, 0, 2, 1, 1)
+        self.gridScan.addWidget(self.samplesLabel, 0, 2, 1, 1)
         self.gridScan.addWidget(self.maxLabel, 0, 3, 1, 1)
         #self.gridScan.addWidget(self.xAxisLabel, 1, 0, 1, 1) REMOVE THIS LATER
         self.gridScan.addWidget(self.xCheckBox, 1, 0)
@@ -350,13 +350,13 @@ class MainWindow(QMainWindow):
         self.gridScan.addWidget(self.zCheckBox, 3, 0)
 
         self.gridScan.addWidget(self.xMinSb, 1, 1)
-        self.gridScan.addWidget(self.xStepSb, 1, 2)
+        self.gridScan.addWidget(self.xSamplesSb, 1, 2)
         self.gridScan.addWidget(self.xMaxSb, 1, 3)
         self.gridScan.addWidget(self.yMinSb, 2, 1)
-        self.gridScan.addWidget(self.yStepSb, 2, 2)
+        self.gridScan.addWidget(self.ySamplesSb, 2, 2)
         self.gridScan.addWidget(self.yMaxSb, 2, 3)
         self.gridScan.addWidget(self.zMinSb, 3, 1)
-        self.gridScan.addWidget(self.zStepSb, 3, 2)
+        self.gridScan.addWidget(self.zSamplesSb, 3, 2)
         self.gridScan.addWidget(self.zMaxSb, 3, 3)
         self.gridScan.addWidget(self.Scan, 4, 2)
 
@@ -562,7 +562,7 @@ class MainWindow(QMainWindow):
             self.feedback_Update.append("Could not connect to the motor controller")
 
         if self.xEnabled:
-            self.width = int((self.xMaxSb.value() - self.xMinSb.value())/self.xStepSb.value()) + 1
+            self.width = self.xSamplesSb.value()
             self.xCoordinates = np.linspace(self.xMinSb.value(), self.xMaxSb.value(), self.width)
             self.feedback_Update.append("X axis width = " + str(self.width) + " samples")
             print(self.xCoordinates)
@@ -570,7 +570,7 @@ class MainWindow(QMainWindow):
             self.width = 1
             self.xCoordinates = np.zeros(1)
         if self.yEnabled:
-            self.depth = int((self.yMaxSb.value() - self.yMinSb.value())/self.yStepSb.value()) + 1
+            self.depth = self.ySamplesSb.value()
             self.yCoordinates = np.linspace(self.yMinSb.value(), self.yMaxSb.value(), self.depth)
             self.feedback_Update.append("Y axis depth = " + str(self.depth) + " samples")
             print(self.yCoordinates)
@@ -578,7 +578,7 @@ class MainWindow(QMainWindow):
             self.depth = 1
             self.yCoordinates = np.zeros(1)
         if self.zEnabled:
-            self.height = int((self.zMaxSb.value() - self.zMinSb.value())/self.zStepSb.value()) + 1
+            self.height = self.zSamplesSb.value()
             self.zCoordinates = np.linspace(self.zMinSb.value(), self.zMaxSb.value(), self.height)
             self.feedback_Update.append("Z axis height = " + str(self.height) + " samples")
             print(self.zCoordinates)
@@ -636,37 +636,37 @@ class MainWindow(QMainWindow):
     def disable_xRow(self):
         self.xEnabled = False
         self.xMaxSb.setEnabled(False)
-        self.xStepSb.setEnabled(False)
+        self.xSamplesSb.setEnabled(False)
         self.xMinSb.setEnabled(False)
 
     def enable_xRow(self):
         self.xEnabled = True
         self.xMaxSb.setEnabled(True)
-        self.xStepSb.setEnabled(True)
+        self.xSamplesSb.setEnabled(True)
         self.xMinSb.setEnabled(True)
 
     def disable_yRow(self):
         self.yEnabled = False
         self.yMaxSb.setEnabled(False)
-        self.yStepSb.setEnabled(False)
+        self.ySamplesSb.setEnabled(False)
         self.yMinSb.setEnabled(False)
 
     def enable_yRow(self):
         self.yEnabled = True
         self.yMaxSb.setEnabled(True)
-        self.yStepSb.setEnabled(True)
+        self.ySamplesSb.setEnabled(True)
         self.yMinSb.setEnabled(True)
 
     def disable_zRow(self):
         self.zEnabled = False
         self.zMaxSb.setEnabled(False)
-        self.zStepSb.setEnabled(False)
+        self.zSamplesSb.setEnabled(False)
         self.zMinSb.setEnabled(False)
 
     def enable_zRow(self):
         self.zEnabled = True
         self.zMaxSb.setEnabled(True)
-        self.zStepSb.setEnabled(True)
+        self.zSamplesSb.setEnabled(True)
         self.zMinSb.setEnabled(True)
 
     # checkBox_state is in charge of determing which checkboxes are checked
@@ -697,10 +697,10 @@ class MainWindow(QMainWindow):
         self.speedCombo.setEnabled(False)
         self.saveNotesBtn.setEnabled(False)
         self.yLoadSb.setEnabled(False)
-        self.yStepSb.setEnabled(False)
+        self.ySamplesSb.setEnabled(False)
         self.yMaxSb.setEnabled(False)
-        self.xStepSb.setEnabled(False)
-        self.zStepSb.setEnabled(False)
+        self.xSamplesSb.setEnabled(False)
+        self.zSamplesSb.setEnabled(False)
         self.xLoadSb.setEnabled(False)
         self.zDownBtn.setEnabled(False)
         self.yDownBtn.setEnabled(False)
@@ -726,10 +726,10 @@ class MainWindow(QMainWindow):
         self.speedCombo.setEnabled(True)
         self.saveNotesBtn.setEnabled(True)
         self.yLoadSb.setEnabled(True)
-        self.yStepSb.setEnabled(True)
+        self.ySamplesSb.setEnabled(True)
         self.yMaxSb.setEnabled(True)
-        self.xStepSb.setEnabled(True)
-        self.zStepSb.setEnabled(True)
+        self.xSamplesSb.setEnabled(True)
+        self.zSamplesSb.setEnabled(True)
         self.xLoadSb.setEnabled(True)
         self.zDownBtn.setEnabled(True)
         self.yDownBtn.setEnabled(True)
