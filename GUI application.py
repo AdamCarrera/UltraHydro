@@ -759,7 +759,7 @@ class MainWindow(QMainWindow):
         if self.Galil.jogSpeed['x'] < 0:
             self.Galil.jogSpeed['x'] = self.Galil.jogSpeed['x'] * -1
         self.Galil.jog('x')
-        self.Galil.begin_motion()
+        self.Galil.begin_motion('A')
         print('jogging!')
 
     def X_Down(self):
@@ -769,7 +769,7 @@ class MainWindow(QMainWindow):
         if self.Galil.jogSpeed['x'] > 0:
             self.Galil.jogSpeed['x'] = -1 * self.Galil.jogSpeed['x']
         self.Galil.jog('x')
-        self.Galil.begin_motion()
+        self.Galil.begin_motion('A')
         print('jogging!')
 
     def Y_Up(self):
@@ -779,7 +779,7 @@ class MainWindow(QMainWindow):
         if self.Galil.jogSpeed['y'] < 0:
             self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
         self.Galil.jog('y')
-        self.Galil.begin_motion()
+        self.Galil.begin_motion('B')
         print('jogging!')
 
     def Y_Down(self):
@@ -789,7 +789,7 @@ class MainWindow(QMainWindow):
         if self.Galil.jogSpeed['y'] > 0:
             self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
         self.Galil.jog('y')
-        self.Galil.begin_motion()
+        self.Galil.begin_motion('B')
         print('jogging!')
 
     def Z_Up(self):
@@ -799,7 +799,7 @@ class MainWindow(QMainWindow):
         if self.Galil.jogSpeed['z'] < 0:
             self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
         self.Galil.jog('z')
-        self.Galil.begin_motion()
+        self.Galil.begin_motion('C')
         print('jogging!')
 
     def Z_Down(self):
@@ -809,7 +809,7 @@ class MainWindow(QMainWindow):
         if self.Galil.jogSpeed['z'] > 0:
             self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
         self.Galil.jog('z')
-        self.Galil.begin_motion()
+        self.Galil.begin_motion('C')
         print('jogging!')
 
     def stop_motion(self):

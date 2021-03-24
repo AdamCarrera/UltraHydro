@@ -8,6 +8,11 @@ class Galil:
     def __init__(self):
         self.handle = gclib.py()                         # Initialize the library object
 
+        # Electronic Gearing
+        self.handle.GCommand('GAD = CA')
+        self.handle.GCommand('GRD = 1')
+        self.handle.GCommand('GM 1,1,1,1')
+
         self.axes = ['x', 'y', 'z']
 
         self.jogging = False
@@ -90,9 +95,9 @@ class Galil:
         else:
             raise Exception('Incompatible axis')
 
-    def begin_motion(self):
+    def begin_motion(self, axis=None):
         try:
-            self.handle.GCommand('BG A')
+            self.handle.GCommand('BG {0}'.format(axis))
         except gclib.GclibError as e:
             print("Cannot begin motion, {0}".format(e))
 
@@ -117,21 +122,27 @@ class Galil:
 
         return result
 
-    def scan(self, scan_size, step_size):
-        boundary1 = scan_size / 2
-        boundary2 = -1 * scan_size / 2
+    def scan(self, x_arr, y_arr, z_arr):
+        for i in np.nditer(x_arr):
+            for j in np.nditer(y_arr):
+                for k in np.nditer(z_arr):
+                    self.handle.GCommand('PA {0},{1},{2}'.format(i, j, k))
+                    self.handle.GCommand('BG ABC')
 
-        NN = (scan_size // step_size) + 1
+                    while self.isMoving():
+                        time.sleep(0.1)
 
-        pointCloud = np.linspace(boundary1, boundary2, NN, endpoint=True)
-        it = np.nditer(pointCloud, flags=['f_index'])
+    def isMoving(self):
 
-        for n in it:
-            self.handle.GCommand('PA %d' % n)
-            self.begin_motion()
-            time.sleep(1)
-            # self.handle.GCommand('WT 1000')
-            print("moving to point #{0} out of {1}, at location: {2}".format(it.index, NN - 1, n))
+        stat_a = self.handle.GCommand('MG_BGA')
+        stat_b = self.handle.GCommand('MG_BGB')
+        stat_c = self.handle.GCommand('MG_BGC')
+
+        # print("statA: %s, statB %s, statC %s" % (statA, statB, statC))
+        if stat_a == '0.0000' and stat_b == '0.0000' and stat_c == '0.0000':
+            return False
+        else:
+            return True
 
     def clean_up(self):
 
