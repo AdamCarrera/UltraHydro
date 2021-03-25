@@ -8,18 +8,13 @@ class Galil:
     def __init__(self):
         self.handle = gclib.py()                         # Initialize the library object
 
-        # Electronic Gearing
-        self.handle.GCommand('GAD = CA')
-        self.handle.GCommand('GRD = 1')
-        self.handle.GCommand('GM 1,1,1,1')
-
         self.axes = ['x', 'y', 'z']
 
         self.jogging = False
         self.jogSpeed = {}
-        self.jogSpeed['x'] = 100000                        # YAML FILE
-        self.jogSpeed['y'] = 100000
-        self.jogSpeed['z'] = 100000
+        self.jogSpeed['x'] = 50000                        # YAML FILE
+        self.jogSpeed['y'] = 50000
+        self.jogSpeed['z'] = 50000
 
 
         self.speed = {}
@@ -54,6 +49,11 @@ class Galil:
                 if _bConnected:
                     break
             print("post connection handle status: {0}".format(self.handle))
+
+            # Electronic Gearing
+            self.handle.GCommand('GAD = CA')
+            self.handle.GCommand('GRD = 1')
+            self.handle.GCommand('GM 1,1,1,1')
 
             try:
                 self.handle.GCommand('ST')
