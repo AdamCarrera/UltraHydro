@@ -41,6 +41,13 @@ class MainWindow(QMainWindow):
         self.f = None
         self.scanning = False
 
+        self.width = 1
+        self.depth = 1
+        self.height = 1
+        self.xCoordinates = np.zeros(1)
+        self.yCoordinates = np.zeros(1)
+        self.zCoordinates = np.zeros(1)
+
         # app = QApplication(sys.argv)
         # self.screen_resolution = app.desktop().screenGeometry()
         self.screen_resolution = None
@@ -189,7 +196,7 @@ class MainWindow(QMainWindow):
 
         # Test Box: Widgets
         self.minLabel = QLabel()
-        self.stepLabel = QLabel()
+        self.samplesLabel = QLabel()
         self.maxLabel = QLabel()
         self.xAxisLabel = QLabel()
         self.yAxisLabel = QLabel()
@@ -205,9 +212,9 @@ class MainWindow(QMainWindow):
         # Test Box - Label: Assigning Names
         # SCAN AREA - LABELS: Assigning Names
         # Assigned the names for the labels
-        self.minLabel.setText('Min')
-        self.stepLabel.setText('Step')
-        self.maxLabel.setText('Max')
+        self.minLabel.setText('Negative limit (mm)')
+        self.samplesLabel.setText('# Samples')
+        self.maxLabel.setText('Positive limit (mm)')
         self.xAxisLabel.setText('X-Axis')
         self.yAxisLabel.setText('Y-Axis')
         self.zAxisLabel.setText('Z-Axis')
@@ -224,7 +231,7 @@ class MainWindow(QMainWindow):
         self.zAxisLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)  # Aligning label horizontally
         self.minLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)  # Aligning label horizontally
         self.maxLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)  # Aligning label horizontally
-        self.stepLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)  # Aligning label horizontally
+        self.samplesLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)  # Aligning label horizontally
         self.positionLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         self.homeLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         self.speedLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
@@ -232,15 +239,30 @@ class MainWindow(QMainWindow):
         self.loadLabel.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
 
         # Test Box - SpinBox
-        self.xMinSb = QSpinBox()  # x-axis min spinbox
-        self.xMaxSb = QSpinBox()  # x-axis max spinbox
-        self.xStepSb = QSpinBox()  # x-axis step spinbox
-        self.yMinSb = QSpinBox()  # y-axis min spinbox
-        self.yMaxSb = QSpinBox()  # y-axis max spinbox
-        self.yStepSb = QSpinBox()  # y-axis step spinbox
-        self.zMinSb = QSpinBox()  # z-axis min spinbox
-        self.zMaxSb = QSpinBox()  # z-axis max spinbox
-        self.zStepSb = QSpinBox()  # z-axis step spinbox
+        self.xMinSb = QDoubleSpinBox()  # x-axis min spinbox
+        self.xMinSb.setRange(-1*self.config["galil_xLimit"], 0)
+        self.xMinSb.setSingleStep(self.config["galil_step"])
+        self.xMaxSb = QDoubleSpinBox()  # x-axis max spinbox
+        self.xMaxSb.setRange(0, self.config["galil_xLimit"])
+        self.xMaxSb.setSingleStep(self.config["galil_step"])
+        self.xSamplesSb = QSpinBox()  # x-axis step spinbox
+        self.xSamplesSb.setRange(1, self.config["galil_maxSamples"])
+        self.yMinSb = QDoubleSpinBox()  # y-axis min spinbox
+        self.yMinSb.setRange(-1 * self.config["galil_yLimit"], 0)
+        self.yMinSb.setSingleStep(self.config["galil_step"])
+        self.yMaxSb = QDoubleSpinBox()  # y-axis max spinbox
+        self.yMaxSb.setRange(0, self.config["galil_yLimit"])
+        self.yMaxSb.setSingleStep(self.config["galil_step"])
+        self.ySamplesSb = QSpinBox()  # y-axis step spinbox
+        self.ySamplesSb.setRange(1, self.config["galil_maxSamples"])
+        self.zMinSb = QDoubleSpinBox()  # z-axis min spinbox
+        self.zMinSb.setRange(-1 * self.config["galil_zLimit"], 0)
+        self.zMinSb.setSingleStep(self.config["galil_step"])
+        self.zMaxSb = QDoubleSpinBox()  # z-axis max spinbox
+        self.zMaxSb.setRange(0, self.config["galil_zLimit"])
+        self.zMaxSb.setSingleStep(self.config["galil_step"])
+        self.zSamplesSb = QSpinBox()  # z-axis step spinbox
+        self.zSamplesSb.setRange(1, self.config["galil_maxSamples"])
 
         self.Scan = QPushButton('Scan')
         self.Scan.pressed.connect(self.scan)
@@ -264,20 +286,20 @@ class MainWindow(QMainWindow):
         # Test Box - Resizing Widgets
         # self.xMinSb.setFixedWidth(100)
         # self.xMaxSb.setFixedWidth(100)
-        # self.xStepSb.setFixedWidth(100)
+        # self.xSamplesSb.setFixedWidth(100)
         # self.yMinSb.setFixedWidth(100)
         # self.yMaxSb.setFixedWidth(100)
-        # self.yStepSb.setFixedWidth(100)
+        # self.ySamplesSb.setFixedWidth(100)
         # self.zMinSb.setFixedWidth(100)
         # self.zMaxSb.setFixedWidth(100)
-        # self.zStepSb.setFixedWidth(100)
+        # self.zSamplesSb.setFixedWidth(100)
 
         # self.minLabel.setFixedWidth(100)
         self.minLabel.setFixedHeight(50)
         # self.maxLabel.setFixedWidth(100)
         self.maxLabel.setFixedHeight(50)
-        # self.stepLabel.setFixedWidth(100)
-        self.stepLabel.setFixedHeight(50)
+        # self.samplesLabel.setFixedWidth(100)
+        self.samplesLabel.setFixedHeight(50)
         self.homeLabel.setFixedHeight(50)
 
         # Test Box - QLineEdit
@@ -333,7 +355,7 @@ class MainWindow(QMainWindow):
         self.giantGrid1.addWidget(self.testGroupBox, 1, 0, 1, 2)  # extends column & row size of groupbox
 
         self.gridScan.addWidget(self.minLabel, 0, 1, 1, 1)
-        self.gridScan.addWidget(self.stepLabel, 0, 2, 1, 1)
+        self.gridScan.addWidget(self.samplesLabel, 0, 2, 1, 1)
         self.gridScan.addWidget(self.maxLabel, 0, 3, 1, 1)
         #self.gridScan.addWidget(self.xAxisLabel, 1, 0, 1, 1) REMOVE THIS LATER
         self.gridScan.addWidget(self.xCheckBox, 1, 0)
@@ -343,13 +365,13 @@ class MainWindow(QMainWindow):
         self.gridScan.addWidget(self.zCheckBox, 3, 0)
 
         self.gridScan.addWidget(self.xMinSb, 1, 1)
-        self.gridScan.addWidget(self.xStepSb, 1, 2)
+        self.gridScan.addWidget(self.xSamplesSb, 1, 2)
         self.gridScan.addWidget(self.xMaxSb, 1, 3)
         self.gridScan.addWidget(self.yMinSb, 2, 1)
-        self.gridScan.addWidget(self.yStepSb, 2, 2)
+        self.gridScan.addWidget(self.ySamplesSb, 2, 2)
         self.gridScan.addWidget(self.yMaxSb, 2, 3)
         self.gridScan.addWidget(self.zMinSb, 3, 1)
-        self.gridScan.addWidget(self.zStepSb, 3, 2)
+        self.gridScan.addWidget(self.zSamplesSb, 3, 2)
         self.gridScan.addWidget(self.zMaxSb, 3, 3)
         self.gridScan.addWidget(self.Scan, 4, 2)
 
@@ -554,21 +576,36 @@ class MainWindow(QMainWindow):
         except:
             self.feedback_Update.append("Could not connect to the motor controller")
 
-        # dummy scan code, flesh this out later
         if self.xEnabled:
-            self.width = 10
+            self.width = self.xSamplesSb.value()
+            self.xCoordinates = np.linspace(self.xMinSb.value(), self.xMaxSb.value(), self.width)
+            self.feedback_Update.append("X axis width = " + str(self.width) + " samples")
+            print(self.xCoordinates)
         else:
             self.width = 1
+            self.xCoordinates = np.zeros(1)
         if self.yEnabled:
-            self.depth = 10
+            self.depth = self.ySamplesSb.value()
+            self.yCoordinates = np.linspace(self.yMinSb.value(), self.yMaxSb.value(), self.depth)
+            self.feedback_Update.append("Y axis depth = " + str(self.depth) + " samples")
+            print(self.yCoordinates)
         else:
             self.depth = 1
+            self.yCoordinates = np.zeros(1)
         if self.zEnabled:
-            self.height = 10
+            self.height = self.zSamplesSb.value()
+            self.zCoordinates = np.linspace(self.zMinSb.value(), self.zMaxSb.value(), self.height)
+            self.feedback_Update.append("Z axis height = " + str(self.height) + " samples")
+            print(self.zCoordinates)
         else:
             self.height = 1
+            self.zCoordinates = np.zeros(1)
 
         self.intensity = np.zeros((self.width, self.depth, self.height))
+
+        galil_x = 0
+        galil_y = 0
+        galil_z = 0
 
         average = np.array([])
         counter = 0
@@ -580,29 +617,41 @@ class MainWindow(QMainWindow):
                         self.end_scan()
                         return
 
-                    coordinates = str(x) + "," + str(y) + "," + str(z)
+                    position_index = str(x) + "," + str(y) + "," + str(z)
+
+                    galil_x = self.xCoordinates[x]*self.config["siglent_mmConversion"]
+                    galil_y = self.yCoordinates[y]*self.config["siglent_mmConversion"]
+                    galil_z = self.zCoordinates[z]*self.config["siglent_mmConversion"]
+
+                    #For testing, remove later
+                    print("Motor coordinates:" + str(galil_x) + "," + str(galil_y) + "," + str(galil_z))
+
+                    #move robot to galil_x, galil_y, galil_z and wait for it to stop
+
                     try:
-                        print("Scanning " + coordinates)
+                        print("Scanning position:" + position_index)
                         self.pico.block()
                         average = np.mean(self.pico.data_mVRay, axis=0)
                         self.tabWidgetBox.plotWidget.plot(self.pico.time, average, clear=True)
                         pg.QtGui.QApplication.processEvents()
                     except:
                         self.feedback_Update.append("Error collecting data from picoscope")
-                        self.f.close()
-                        self.end_scan()
-                        return
+                        if self.config["end_scan_on_errors"]:
+                            self.f.close()
+                            self.end_scan()
+                            return
                     try:
-                        self.scanData.create_dataset(name=coordinates, data=average)
+                        self.scanData.create_dataset(name=position_index, data=average)
                     except:
                         self.feedback_Update.append("Error writing data, the selected file may already exist")
-                        self.f.close()
-                        self.end_scan()
-                        return
+                        if self.config["end_scan_on_errors"]:
+                            self.f.close()
+                            self.end_scan()
+                            return
                     try:
                         self.intensity.itemset((x, y, z), average.max())
                     except ValueError:
-                        self.feedback_Update.append("Empty waveform detected at: " + coordinates)
+                        self.feedback_Update.append("Empty waveform detected at position: " + position_index)
                         self.intensity.itemset((x, y, z), 0)
 
                     self.tabWidgetBox.intensityMap.setImage(self.intensity[:][:][:])
@@ -618,37 +667,37 @@ class MainWindow(QMainWindow):
     def disable_xRow(self):
         self.xEnabled = False
         self.xMaxSb.setEnabled(False)
-        self.xStepSb.setEnabled(False)
+        self.xSamplesSb.setEnabled(False)
         self.xMinSb.setEnabled(False)
 
     def enable_xRow(self):
         self.xEnabled = True
         self.xMaxSb.setEnabled(True)
-        self.xStepSb.setEnabled(True)
+        self.xSamplesSb.setEnabled(True)
         self.xMinSb.setEnabled(True)
 
     def disable_yRow(self):
         self.yEnabled = False
         self.yMaxSb.setEnabled(False)
-        self.yStepSb.setEnabled(False)
+        self.ySamplesSb.setEnabled(False)
         self.yMinSb.setEnabled(False)
 
     def enable_yRow(self):
         self.yEnabled = True
         self.yMaxSb.setEnabled(True)
-        self.yStepSb.setEnabled(True)
+        self.ySamplesSb.setEnabled(True)
         self.yMinSb.setEnabled(True)
 
     def disable_zRow(self):
         self.zEnabled = False
         self.zMaxSb.setEnabled(False)
-        self.zStepSb.setEnabled(False)
+        self.zSamplesSb.setEnabled(False)
         self.zMinSb.setEnabled(False)
 
     def enable_zRow(self):
         self.zEnabled = True
         self.zMaxSb.setEnabled(True)
-        self.zStepSb.setEnabled(True)
+        self.zSamplesSb.setEnabled(True)
         self.zMinSb.setEnabled(True)
 
     # checkBox_state is in charge of determing which checkboxes are checked
@@ -679,10 +728,10 @@ class MainWindow(QMainWindow):
         self.speedCombo.setEnabled(False)
         self.saveNotesBtn.setEnabled(False)
         self.yLoadSb.setEnabled(False)
-        self.yStepSb.setEnabled(False)
+        self.ySamplesSb.setEnabled(False)
         self.yMaxSb.setEnabled(False)
-        self.xStepSb.setEnabled(False)
-        self.zStepSb.setEnabled(False)
+        self.xSamplesSb.setEnabled(False)
+        self.zSamplesSb.setEnabled(False)
         self.xLoadSb.setEnabled(False)
         self.zDownBtn.setEnabled(False)
         self.yDownBtn.setEnabled(False)
@@ -708,10 +757,10 @@ class MainWindow(QMainWindow):
         self.speedCombo.setEnabled(True)
         self.saveNotesBtn.setEnabled(True)
         self.yLoadSb.setEnabled(True)
-        self.yStepSb.setEnabled(True)
+        self.ySamplesSb.setEnabled(True)
         self.yMaxSb.setEnabled(True)
-        self.xStepSb.setEnabled(True)
-        self.zStepSb.setEnabled(True)
+        self.xSamplesSb.setEnabled(True)
+        self.zSamplesSb.setEnabled(True)
         self.xLoadSb.setEnabled(True)
         self.zDownBtn.setEnabled(True)
         self.yDownBtn.setEnabled(True)
@@ -884,17 +933,18 @@ class tabWidget(QWidget):
             if self.screen_resolution.width() > 1920:  # 4K resolution
                 self.left = 100
                 self.top = 100
-                self.width = 3000
-                self.height = 1000
+                self.screen_width = 3000
+                self.screen_height = 1000
                 self.pgHoffset = 105
                 self.pgWoffset = 125
         else:  # full HD
             self.left = 50
             self.top = 50
-            self.width = 1500
-            self.height = 750
+            self.screen_width = 1500
+            self.screen_height = 750
             self.pgHoffset = 55
             self.pgWoffset = 75
+
 
         self.pico = picoscope
         self.func = siglent
