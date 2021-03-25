@@ -603,6 +603,10 @@ class MainWindow(QMainWindow):
 
         self.intensity = np.zeros((self.width, self.depth, self.height))
 
+        galil_x = 0
+        galil_y = 0
+        galil_z = 0
+
         average = np.array([])
         counter = 0
         for x in range(self.width):
@@ -613,29 +617,41 @@ class MainWindow(QMainWindow):
                         self.end_scan()
                         return
 
-                    coordinates = str(x) + "," + str(y) + "," + str(z)
+                    position_index = str(x) + "," + str(y) + "," + str(z)
+
+                    galil_x = self.xCoordinates[x]*self.config["siglent_mmConversion"]
+                    galil_y = self.yCoordinates[y]*self.config["siglent_mmConversion"]
+                    galil_z = self.zCoordinates[z]*self.config["siglent_mmConversion"]
+
+                    #For testing, remove later
+                    print("Motor coordinates:" + str(galil_x) + "," + str(galil_y) + "," + str(galil_z))
+
+                    #move robot to galil_x, galil_y, galil_z and wait for it to stop
+
                     try:
-                        print("Scanning " + coordinates)
+                        print("Scanning position:" + position_index)
                         self.pico.block()
                         average = np.mean(self.pico.data_mVRay, axis=0)
                         self.tabWidgetBox.plotWidget.plot(self.pico.time, average, clear=True)
                         pg.QtGui.QApplication.processEvents()
                     except:
                         self.feedback_Update.append("Error collecting data from picoscope")
-                        self.f.close()
-                        self.end_scan()
-                        return
+                        if self.config["end_scan_on_errors"]:
+                            self.f.close()
+                            self.end_scan()
+                            return
                     try:
-                        self.scanData.create_dataset(name=coordinates, data=average)
+                        self.scanData.create_dataset(name=position_index, data=average)
                     except:
                         self.feedback_Update.append("Error writing data, the selected file may already exist")
-                        self.f.close()
-                        self.end_scan()
-                        return
+                        if self.config["end_scan_on_errors"]:
+                            self.f.close()
+                            self.end_scan()
+                            return
                     try:
                         self.intensity.itemset((x, y, z), average.max())
                     except ValueError:
-                        self.feedback_Update.append("Empty waveform detected at: " + coordinates)
+                        self.feedback_Update.append("Empty waveform detected at position: " + position_index)
                         self.intensity.itemset((x, y, z), 0)
 
                     self.tabWidgetBox.intensityMap.setImage(self.intensity[:][:][:])
