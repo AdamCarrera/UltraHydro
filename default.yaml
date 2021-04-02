@@ -12,6 +12,11 @@ picoscope_samplesMax: 100000
 picoscope_delay: 0
 picoscope_delayMax: 1000
 picoscope_setSigGen: False
+picoscope_baseTimePerWaveform: .01
+picoscope_baseTimePerPoint: .01
+picoscope_baseDataPerWaveform: .0
+picoscope_baseDataPerPoint: .0
+picoscope_dataPerSample: 2
 siglent_frequencyHz: '1000000'
 siglent_frequencyHzMax: '10000000'
 siglent_amplitudeV: '10'
@@ -21,7 +26,7 @@ siglent_burstPeriodSMax: '1'
 siglent_cycles: '5'
 siglent_cyclesMax: '100'
 siglent_output: 'ON'
-siglent_mmConversion: 100000
+galil_mmConversion: 100000
 galil_xLimit: 10000000
 galil_yLimit: 10000000
 galil_zLimit: 10000000

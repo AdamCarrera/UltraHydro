@@ -548,8 +548,71 @@ class MainWindow(QMainWindow):
     def edit_toggle_wrap(self):
         self.editor.setLineWrapMode(1 if self.editor.lineWrapMode() == 0 else 0)
 
+    def estimate_time(self):
+        numPoints = self.width * self.height * self.depth
+
+        timePerPoint = self.config["picoscope_baseTimePerPoint"] + (self.config["picoscope_baseTimePerWaveform"] +
+                                                                    (self.tabWidgetBox.preTriggerSamplesSpinBox.value() + self.tabWidgetBox.postTriggerSamplesSpinBox.value())
+                                                                    * float(self.tabWidgetBox.intervalCombo.currentText())/(1000000000)) * self.tabWidgetBox.waveformsSpinBox.value()
+
+
+        totalTime = timePerPoint*numPoints
+
+        if totalTime < 180:
+            self.feedback_Update.append("Estimated scan time = " + str(totalTime) + " seconds")
+        else:
+            self.feedback_Update.append("Estimated scan time= " + str(int(totalTime/60)) + "minutes")
+
+    def estimate_fileSize(self):
+        numPoints = self.width * self.height * self.depth
+
+        dataPerPoint = self.config["picoscope_baseDataPerPoint"] + (self.config["picoscope_baseDataPerWaveform"] +
+                                                                    (self.tabWidgetBox.preTriggerSamplesSpinBox.value() + self.tabWidgetBox.postTriggerSamplesSpinBox.value())
+                                                                    * self.tabWidgetBox.waveformsSpinBox.value()*self.config["picoscope_dataPerSample"])
+
+        totalData = dataPerPoint * numPoints
+
+        if totalData < 10000000:
+            self.feedback_Update.append("Estimated file size = " + str(totalData/1000) + " kilobytes")
+        else:
+            self.feedback_Update.append("Estimated file size = " + str(totalData/1000000) + " megabytes")
+
+
+
+    def getCoordinates(self):
+        if self.xEnabled:
+            self.width = self.xSamplesSb.value()
+            self.xCoordinates = np.linspace(self.xMinSb.value(), self.xMaxSb.value(), self.width)
+            self.feedback_Update.append("X axis width = " + str(self.width) + " samples")
+            print(self.xCoordinates)
+        else:
+            self.width = 1
+            self.xCoordinates = np.zeros(1)
+        if self.yEnabled:
+            self.depth = self.ySamplesSb.value()
+            self.yCoordinates = np.linspace(self.yMinSb.value(), self.yMaxSb.value(), self.depth)
+            self.feedback_Update.append("Y axis depth = " + str(self.depth) + " samples")
+            print(self.yCoordinates)
+        else:
+            self.depth = 1
+            self.yCoordinates = np.zeros(1)
+        if self.zEnabled:
+            self.height = self.zSamplesSb.value()
+            self.zCoordinates = np.linspace(self.zMinSb.value(), self.zMaxSb.value(), self.height)
+            self.feedback_Update.append("Z axis height = " + str(self.height) + " samples")
+            print(self.zCoordinates)
+        else:
+            self.height = 1
+            self.zCoordinates = np.zeros(1)
+
     # Jogging Actions
     def scan(self):
+
+        try:
+            self.feedback_Update.append("Confirming oscilloscope settings")
+            self.tabWidgetBox.pico_confirm_data()
+        except:
+            self.feedback_Update.append("Failed to configure oscilloscope")
 
         # This will end the graphing loop in the pico_confirm_data function
         self.tabWidgetBox.set_jogging(False)
@@ -576,30 +639,9 @@ class MainWindow(QMainWindow):
         except:
             self.feedback_Update.append("Could not connect to the motor controller")
 
-        if self.xEnabled:
-            self.width = self.xSamplesSb.value()
-            self.xCoordinates = np.linspace(self.xMinSb.value(), self.xMaxSb.value(), self.width)
-            self.feedback_Update.append("X axis width = " + str(self.width) + " samples")
-            print(self.xCoordinates)
-        else:
-            self.width = 1
-            self.xCoordinates = np.zeros(1)
-        if self.yEnabled:
-            self.depth = self.ySamplesSb.value()
-            self.yCoordinates = np.linspace(self.yMinSb.value(), self.yMaxSb.value(), self.depth)
-            self.feedback_Update.append("Y axis depth = " + str(self.depth) + " samples")
-            print(self.yCoordinates)
-        else:
-            self.depth = 1
-            self.yCoordinates = np.zeros(1)
-        if self.zEnabled:
-            self.height = self.zSamplesSb.value()
-            self.zCoordinates = np.linspace(self.zMinSb.value(), self.zMaxSb.value(), self.height)
-            self.feedback_Update.append("Z axis height = " + str(self.height) + " samples")
-            print(self.zCoordinates)
-        else:
-            self.height = 1
-            self.zCoordinates = np.zeros(1)
+        self.getCoordinates()
+        self.estimate_time()
+        self.estimate_fileSize()
 
         self.intensity = np.zeros((self.width, self.depth, self.height))
 
@@ -619,9 +661,9 @@ class MainWindow(QMainWindow):
 
                     position_index = str(x) + "," + str(y) + "," + str(z)
 
-                    galil_x = self.xCoordinates[x]*self.config["siglent_mmConversion"]
-                    galil_y = self.yCoordinates[y]*self.config["siglent_mmConversion"]
-                    galil_z = self.zCoordinates[z]*self.config["siglent_mmConversion"]
+                    galil_x = self.xCoordinates[x]*self.config["galil_mmConversion"]
+                    galil_y = self.yCoordinates[y]*self.config["galil_mmConversion"]
+                    galil_z = self.zCoordinates[z]*self.config["galil_mmConversion"]
 
                     #For testing, remove later
                     print("Motor coordinates:" + str(galil_x) + "," + str(galil_y) + "," + str(galil_z))
@@ -654,7 +696,13 @@ class MainWindow(QMainWindow):
                         self.feedback_Update.append("Empty waveform detected at position: " + position_index)
                         self.intensity.itemset((x, y, z), 0)
 
-                    self.tabWidgetBox.intensityMap.setImage(self.intensity[:][:][:])
+                    if self.xEnabled and self.yEnabled and not self.zEnabled:
+                        self.tabWidgetBox.intensityMap.setImage(self.intensity[:][:][0])
+                    elif self.xEnabled and self.zEnabled and not self.yEnabled:
+                        self.tabWidgetBox.intensityMap.setImage(self.intensity[:][0][:])
+                    else:
+                        self.tabWidgetBox.intensityMap.setImage(self.intensity[:][:][:])
+
                     pg.QtGui.QApplication.processEvents()
                     # iv.show()
                     # plots the average across waveforms of captured data from the picoscope
@@ -1220,6 +1268,7 @@ class tabWidget(QWidget):
     def pico_confirm_data(self):
         self.jogging = False
         self.pico.close()
+
         self.pico.setup(range_mV=int(self.rangeCombo.currentText()), blocks=self.waveformsSpinBox.value(),
                         timebase=self.intervalCombo.currentIndex() + 1, external=self.triggerCombo.currentIndex(),
                         triggermV=self.thresholdSpinBox.value(), delay=self.delaySpinBox.value(),
