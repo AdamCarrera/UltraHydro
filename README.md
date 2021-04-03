@@ -38,7 +38,7 @@ Set up picotech library, assuming picoSDK is istalled
 * Then, extract the folder and navigate to it in the anaconda terminal (same environment)
 * Finally, run this command.
 
->python setup.py install
+>python install setup.py 
 
 When you are finished, run this command to verify the anaconda environment has all of these libraries:
 

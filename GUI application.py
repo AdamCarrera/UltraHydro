@@ -548,34 +548,36 @@ class MainWindow(QMainWindow):
     def edit_toggle_wrap(self):
         self.editor.setLineWrapMode(1 if self.editor.lineWrapMode() == 0 else 0)
 
-    # Jogging Actions
-    def scan(self):
+    def estimate_time(self):
+        numPoints = self.width * self.height * self.depth
 
-        # This will end the graphing loop in the pico_confirm_data function
-        self.tabWidgetBox.set_jogging(False)
-        self.scanning = True
-        self.tabWidgetBox.disable_buttons()
-        self.disable_buttons()
+        timePerPoint = self.config["picoscope_baseTimePerPoint"] + (self.config["picoscope_baseTimePerWaveform"] +
+                                                                    (self.tabWidgetBox.preTriggerSamplesSpinBox.value() + self.tabWidgetBox.postTriggerSamplesSpinBox.value())
+                                                                    * float(self.tabWidgetBox.intervalCombo.currentText())/(1000000000)) * self.tabWidgetBox.waveformsSpinBox.value()
 
-        Filename, ok = QInputDialog.getText(self, 'New scan', 'Enter file name for scan data:')
 
-        self.feedback_Update.append("Creating output file: " + Filename + ".hdf5")
-        try:
-            self.f = h5py.File(Filename + ".hdf5", "a")
-        except:
-            print("unable to create file")
-        # Creates subfolder within the file for scan data
-        try:
-            self.scanData = self.f.create_group("Scan")
-        except:
-            self.feedback_Update.append("file or HDF5 group already exists")
+        totalTime = timePerPoint*numPoints
 
-        self.feedback_Update.append("Beginning scan")
-        try:
-            self.Galil.scan(self.scanSize, self.stepSize)
-        except:
-            self.feedback_Update.append("Could not connect to the motor controller")
+        if totalTime < 180:
+            self.feedback_Update.append("Estimated scan time = " + str(totalTime) + " seconds")
+        else:
+            self.feedback_Update.append("Estimated scan time= " + str(int(totalTime/60)) + "minutes")
 
+    def estimate_fileSize(self):
+        numPoints = self.width * self.height * self.depth
+
+        dataPerPoint = self.config["picoscope_baseDataPerPoint"] + (self.tabWidgetBox.preTriggerSamplesSpinBox.value() + self.tabWidgetBox.postTriggerSamplesSpinBox.value())*self.config["picoscope_dataPerSample"]
+
+        totalData = dataPerPoint * numPoints + self.config["picoscope_baseDataPerScan"]
+
+        if totalData < 10000000:
+            self.feedback_Update.append("Estimated file size = " + str(totalData/1000) + " kilobytes")
+        else:
+            self.feedback_Update.append("Estimated file size = " + str(totalData/1000000) + " megabytes")
+
+
+
+    def getCoordinates(self):
         if self.xEnabled:
             self.width = self.xSamplesSb.value()
             self.xCoordinates = np.linspace(self.xMinSb.value(), self.xMaxSb.value(), self.width)
@@ -601,11 +603,47 @@ class MainWindow(QMainWindow):
             self.height = 1
             self.zCoordinates = np.zeros(1)
 
+    # Jogging Actions
+    def scan(self):
+        self.getCoordinates()
+        self.estimate_time()
+        self.estimate_fileSize()
+
+        # This will end the graphing loop in the pico_confirm_data function
+        self.tabWidgetBox.set_jogging(False)
+        self.scanning = True
+        self.tabWidgetBox.disable_buttons()
+        self.disable_buttons()
+
+        Filename, ok = QInputDialog.getText(self, 'New scan', 'Enter file name for scan data:')
+
+        self.feedback_Update.append("Creating output file: " + Filename + ".hdf5")
+        try:
+            self.f = h5py.File(Filename + ".hdf5", "a")
+        except:
+            print("unable to create file")
+            self.end_scan()
+            return
+        # Creates subfolder within the file for scan data
+        try:
+            self.scanData = self.f.create_group("Scan")
+        except:
+            self.feedback_Update.append("file or HDF5 group already exists")
+
+        self.feedback_Update.append("Beginning scan")
+        try:
+            self.Galil.scan(self.scanSize, self.stepSize)
+        except:
+            self.feedback_Update.append("Could not connect to the motor controller")
+
+
         self.intensity = np.zeros((self.width, self.depth, self.height))
 
         galil_x = 0
         galil_y = 0
         galil_z = 0
+
+        scanStartTime = t.time()
 
         average = np.array([])
         counter = 0
@@ -613,15 +651,17 @@ class MainWindow(QMainWindow):
             for y in range(self.depth):
                 for z in range(self.height):
                     if not self.scanning:
-                        self.f.close()
-                        self.end_scan()
-                        return
-
+                        try:
+                            self.f.close()
+                        finally:
+                            self.end_scan()
+                            return
+                    pointStartTime = t.time()
                     position_index = str(x) + "," + str(y) + "," + str(z)
 
-                    galil_x = self.xCoordinates[x]*self.config["siglent_mmConversion"]
-                    galil_y = self.yCoordinates[y]*self.config["siglent_mmConversion"]
-                    galil_z = self.zCoordinates[z]*self.config["siglent_mmConversion"]
+                    galil_x = self.xCoordinates[x]*self.config["galil_mmConversion"]
+                    galil_y = self.yCoordinates[y]*self.config["galil_mmConversion"]
+                    galil_z = self.zCoordinates[z]*self.config["galil_mmConversion"]
 
                     #For testing, remove later
                     print("Motor coordinates:" + str(galil_x) + "," + str(galil_y) + "," + str(galil_z))
@@ -637,31 +677,51 @@ class MainWindow(QMainWindow):
                     except:
                         self.feedback_Update.append("Error collecting data from picoscope")
                         if self.config["end_scan_on_errors"]:
-                            self.f.close()
-                            self.end_scan()
-                            return
+                            try:
+                                self.f.close()
+                            finally:
+                                self.end_scan()
+                                return
                     try:
                         self.scanData.create_dataset(name=position_index, data=average)
                     except:
                         self.feedback_Update.append("Error writing data, the selected file may already exist")
                         if self.config["end_scan_on_errors"]:
-                            self.f.close()
-                            self.end_scan()
-                            return
+                            try:
+                                self.f.close()
+                            finally:
+                                self.end_scan()
+                                return
                     try:
                         self.intensity.itemset((x, y, z), average.max())
                     except ValueError:
                         self.feedback_Update.append("Empty waveform detected at position: " + position_index)
                         self.intensity.itemset((x, y, z), 0)
 
-                    self.tabWidgetBox.intensityMap.setImage(self.intensity[:][:][:])
+                    if self.xEnabled and self.yEnabled and not self.zEnabled:
+                        self.tabWidgetBox.intensityMap.setImage(self.intensity[:][:][0])
+                    elif self.xEnabled and self.zEnabled and not self.yEnabled:
+                        self.tabWidgetBox.intensityMap.setImage(self.intensity[:][0][:])
+                    elif self.yEnabled and self.zEnabled and not self.xEnabled:
+                        self.tabWidgetBox.intensityMap.setImage(self.intensity[0][:][:])
+                    else:
+                        self.tabWidgetBox.intensityMap.setImage(self.intensity[:][:][:])
+
                     pg.QtGui.QApplication.processEvents()
                     # iv.show()
                     # plots the average across waveforms of captured data from the picoscope
+                    print("Point time = " + str(t.time()-pointStartTime))
 
-        self.scanData.create_dataset(name="Intensity map", data=self.intensity)
-        self.f.close()
+
+        try:
+            self.scanData.create_dataset(name="Intensity map", data=self.intensity)
+            self.f.close()
+        except:
+            self.feedback_Update.append("Error closing file")
         self.end_scan()
+
+
+        print("Scan time = " + str(t.time() - scanStartTime))
 
     # The following functions disable/enable x, y, and z rows.
     def disable_xRow(self):
@@ -892,7 +952,7 @@ class MainWindow(QMainWindow):
                             preSamples=self.config["picoscope_preSamples"],
                             postSamples=self.config["picoscope_postSamples"])
         except:
-            self.feedback_Update.append("Oscilliscope failed to connect, make sure one is connected and restart")
+            self.feedback_Update.append("Oscilliscope failed to connect, make sure it is connected to a USB 3 port and restart")
 
     # Adding a warning when close button is pressed
     def closeEvent(self, event):
@@ -1035,7 +1095,7 @@ class tabWidget(QWidget):
         self.rangeCombo.setCurrentText(str(self.config["picoscope_rangemV"]))
 
         self.intervalCombo = QComboBox(self)
-        self.intervalCombo.addItems(['2', '4', '8', '16', '32', '48', '64', '80', '96', '112', '128', '144'])
+        self.intervalCombo.addItems(['4', '8', '16', '32', '48', '64', '80', '96', '112', '128', '144'])
         self.intervalCombo.setCurrentText(str(2 ** (self.config["picoscope_timebase"])))
 
         self.triggerCombo = QComboBox(self)
@@ -1220,8 +1280,9 @@ class tabWidget(QWidget):
     def pico_confirm_data(self):
         self.jogging = False
         self.pico.close()
+
         self.pico.setup(range_mV=int(self.rangeCombo.currentText()), blocks=self.waveformsSpinBox.value(),
-                        timebase=self.intervalCombo.currentIndex() + 1, external=self.triggerCombo.currentIndex(),
+                        timebase=self.intervalCombo.currentIndex() + 2, external=self.triggerCombo.currentIndex(),
                         triggermV=self.thresholdSpinBox.value(), delay=self.delaySpinBox.value(),
                         preSamples=self.preTriggerSamplesSpinBox.value(),
                         postSamples=self.postTriggerSamplesSpinBox.value())
@@ -1242,7 +1303,7 @@ class tabWidget(QWidget):
                 return
             self.displayData()
 
-        self.feedback_Update.append("10 Plots displayed in " + str(t.time() - startTime) + " seconds. Display frequency is " + str(
+        print("10 Plots displayed in " + str(t.time() - startTime) + " seconds. Display frequency is " + str(
             10 / (t.time() - startTime)) + "Hz")
 
         while self.jogging:
