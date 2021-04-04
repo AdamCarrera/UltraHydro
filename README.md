@@ -1,7 +1,7 @@
 # UltraHydro
 UltraHydrophonics Scan Tank Development
 
-##How to Set Up a Computer for this Application:
+## How to Set Up a Computer for this Application:
 
 Requirements:
 Windows 10 64 bit
@@ -13,7 +13,17 @@ Install GcLib
 https://www.galil.com/sw/pub/win/gclib/galil_gclib_480.exe
 
 Install Anaconda 3 with Python 3.8.6
-________________________________________________________
+
+### Anaconda Environment Creation
+
+Create a new environment to store the packages:
+> conda create --name some_name python=3.8
+
+To activate this environment:
+> conda activate some_name
+
+Where some_name is the desired name of the environment
+### Package Installation
 Run the following commands in the anaconda prompt with a fresh environment:
 
 >conda install -c conda-forge pyside2 \
@@ -23,7 +33,7 @@ Run the following commands in the anaconda prompt with a fresh environment:
 >conda install -c conda-forge pyqtgraph \
 >conda install -c conda-forge pyvisa 
 
-Set up gclib, assuming it is already installed
+Set up gclib, assuming it is already installed. Note, your newly created conda environment must be active.
 
 >cd %temp% \
 >mkdir py \
