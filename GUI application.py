@@ -628,6 +628,12 @@ class MainWindow(QMainWindow):
 
                     #move robot to galil_x, galil_y, galil_z and wait for it to stop
 
+                    self.Galil.handle.GCommand('PA {0},{1}{2}'.format(galil_x, galil_y, galil_z))
+                    self.Galil.handle.GCommand('BG ABC')
+
+                    while self.Galil.isMoving():
+                        t.sleep(0.1)
+
                     try:
                         print("Scanning position:" + position_index)
                         self.pico.block()
