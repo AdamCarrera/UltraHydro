@@ -668,6 +668,12 @@ class MainWindow(QMainWindow):
 
                     #move robot to galil_x, galil_y, galil_z and wait for it to stop
 
+                    self.Galil.handle.GCommand('PA {0},{1}{2}'.format(galil_x, galil_y, galil_z))
+                    self.Galil.handle.GCommand('BG ABC')
+
+                    while self.Galil.isMoving():
+                        t.sleep(0.1)
+
                     try:
                         print("Scanning position:" + position_index)
                         self.pico.block()
@@ -868,7 +874,7 @@ class MainWindow(QMainWindow):
         if self.Galil.jogSpeed['x'] < 0:
             self.Galil.jogSpeed['x'] = self.Galil.jogSpeed['x'] * -1
         self.Galil.jog('x')
-        self.Galil.begin_motion()
+        self.Galil.begin_motion('A')
         print('jogging!')
 
     def X_Down(self):
@@ -878,7 +884,7 @@ class MainWindow(QMainWindow):
         if self.Galil.jogSpeed['x'] > 0:
             self.Galil.jogSpeed['x'] = -1 * self.Galil.jogSpeed['x']
         self.Galil.jog('x')
-        self.Galil.begin_motion()
+        self.Galil.begin_motion('A')
         print('jogging!')
 
     def Y_Up(self):
@@ -888,7 +894,7 @@ class MainWindow(QMainWindow):
         if self.Galil.jogSpeed['y'] < 0:
             self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
         self.Galil.jog('y')
-        self.Galil.begin_motion()
+        self.Galil.begin_motion('B')
         print('jogging!')
 
     def Y_Down(self):
@@ -898,7 +904,7 @@ class MainWindow(QMainWindow):
         if self.Galil.jogSpeed['y'] > 0:
             self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
         self.Galil.jog('y')
-        self.Galil.begin_motion()
+        self.Galil.begin_motion('B')
         print('jogging!')
 
     def Z_Up(self):
@@ -908,7 +914,7 @@ class MainWindow(QMainWindow):
         if self.Galil.jogSpeed['z'] < 0:
             self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
         self.Galil.jog('z')
-        self.Galil.begin_motion()
+        self.Galil.begin_motion('C')
         print('jogging!')
 
     def Z_Down(self):
@@ -918,7 +924,7 @@ class MainWindow(QMainWindow):
         if self.Galil.jogSpeed['z'] > 0:
             self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
         self.Galil.jog('z')
-        self.Galil.begin_motion()
+        self.Galil.begin_motion('C')
         print('jogging!')
 
     def stop_motion(self):
