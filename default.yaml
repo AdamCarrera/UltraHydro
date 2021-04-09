@@ -26,7 +26,7 @@ siglent_burstPeriodSMax: '1'
 siglent_cycles: '5'
 siglent_cyclesMax: '100'
 siglent_output: 'ON'
-galil_mmConversion: 100000
+galil_mmConversion: 1
 galil_xLimit: 10000000
 galil_yLimit: 10000000
 galil_zLimit: 10000000

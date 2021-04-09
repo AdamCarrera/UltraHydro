@@ -40,7 +40,7 @@ class Galil:
             for port in port_list.keys():
                 print("port: {0} , handle status: {1}".format(port, self.handle))
                 try:
-                    self.handle.GOpen('%s --direct -s ALL' % port)
+                    self.handle.GOpen('192.168.42.100 --direct -s ALL')
                     print(self.handle.GInfo())
                     _bConnected = True
                 except gclib.GclibError as e:
@@ -109,6 +109,7 @@ class Galil:
         try:
             self.handle.GCommand('ST')
             self.handle.GCommand('DP 0,0,0')
+            print('origin set')
         except gclib.GclibError as e:
             print("Something went wrong: {0}".format(e))
 
