@@ -1097,7 +1097,7 @@ class tabWidget(QWidget):
         self.rangeLabel.setText('ADC Range (mV)')
         self.intervalLabel.setText('Sample Interval (ns)')
         self.triggerLabel.setText('Trigger')
-        self.thresholdLabel.setText('Trigger Threshold')
+        self.thresholdLabel.setText('Trigger Threshold (mV)')
         self.delayLabel.setText('Trigger delay (samples)')
         self.preTriggerLabel.setText('Pre Trigger Samples')
         self.postTriggerLabel.setText('Post Trigger Samples')
