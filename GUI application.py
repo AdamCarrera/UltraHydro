@@ -1052,22 +1052,15 @@ class MainWindow(QMainWindow):
                 self.Galil.begin_motion('C')
                 print('jogging!')
 
-        else:
-            Progress = "Keyboard Jogging is disabled"
-            self.feedback_Update.append(str(Progress))
-
     def keyReleaseEvent(self, event):
         event_value = self.keyevent_to_string(event)
-        self.grabKeyboard()
-        self.setFocus()
         #self.Galil.stop_motion()
         self.stop_motion
-
-        if event_value == "Up" or event_value == "Down" or event_value == "Right" or event_value == "Left" or event_value == "Control+Minus" or event_value == "Control+Equal":
-            if not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == True:
-                print('stopping motion')
-                Progress = "Jogging stopped"
-                self.feedback_Update.append(str(Progress))
+        #if event_value == "Up" or event_value == "Down" or event_value == "Right" or event_value == "Left" or event_value == "Control+Minus" or event_value == "Control+Equal":
+        if not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == True:
+            print('stopping motion')
+            Progress = "Jogging stopped"
+            self.feedback_Update.append(str(Progress))
 
 
 # Tab Widget in its own Class

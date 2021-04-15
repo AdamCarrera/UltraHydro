@@ -1,31 +1,27 @@
+from PySide2 import QtCore, QtGui
 import sys
-from PySide2.QtCore import Qt
-from PySide2.QtWidgets import QApplication, QWidget
 
+class Example(QWidget):
+    def __init__(self):
+        super(Example, self).__init__()
+        self.setGeometry(300, 300, 250, 150)
+        self.show()
 
-
-
-
-class Window(QWidget):
-    def keyevent_to_string(self,event):
-        sequence = []
-        for modifier, text in modmap.items():
-            if event.modifiers() & modifier:
-                sequence.append(text)
-        key = keymap.get(event.key(), event.text())
-        if key not in sequence:
-            sequence.append(key)
-        return '+'.join(sequence)
     def keyPressEvent(self, event):
-        X = self.keyevent_to_string(event)
-        print(X)
-        if X == "Up":
-            print('Pressed')
+        if event.key() == QtCore.Qt.Key_Q:
+            print("Killing")
+            self.deleteLater()
+        elif event.key() == QtCore.Qt.Key_Enter:
+            self.proceed()
+        event.accept()
+
+    def proceed(self):
+        print ("Call Enter Key")
+
+def main():
+    app = QtGui.QApplication(sys.argv)
+    ex = Example()
+    sys.exit(app.exec_())
 
 if __name__ == '__main__':
-
-    app = QApplication(sys.argv)
-    window = Window()
-    window.setGeometry(600, 100, 300, 200)
-    window.show()
-    sys.exit(app.exec_())
+    main()
