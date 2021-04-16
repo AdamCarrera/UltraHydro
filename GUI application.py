@@ -1067,7 +1067,7 @@ class MainWindow(QMainWindow):
     def keyReleaseEvent(self, event):
         event_value = self.keyevent_to_string(event)
         #self.Galil.stop_motion()
-        self.stop_motion
+
         if event_value == "Control+Up" or event_value == "Control+Down" or event_value == "Control+Right" or event_value == "Control+Left" or event_value == "Control+Minus" or event_value == "Control+Equal":
             if not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == True:
                 Progress = "Jogging stopped"
