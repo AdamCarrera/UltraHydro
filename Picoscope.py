@@ -211,7 +211,7 @@ class Picoscope(object):
             autotriggerDelay = int(self.runtimeNs)
 
         try:
-            self.status["trigger"] = ps.ps5000aSetSimpleTrigger(self.chandle, 1, source, threshold, 2, delay, ctypes.c_int16(0))
+            self.status["trigger"] = ps.ps5000aSetSimpleTrigger(self.chandle, 1, source, threshold, 2, delay, ctypes.c_int16(100))
             assert_pico_ok(self.status["trigger"])
         except:
             print("Invalid picoscope trigger settings")

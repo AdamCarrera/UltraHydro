@@ -646,7 +646,7 @@ class MainWindow(QMainWindow):
 
         # Used for mfp demo, delete later
         focusFlag = 0
-        self.tabWidgetBox.func.SetAmplitude(0)
+        self.tabWidgetBox.func.SetAmplitude("1", 0)
 
         average = np.array([])
         counter = 0
@@ -659,33 +659,46 @@ class MainWindow(QMainWindow):
                         finally:
                             self.end_scan()
                             return
-                    pointStartTime = t.time()
+
 
                     distanceFromCenter = (((self.width-1) / 2 - x) ** 2 + ((self.depth-1) / 2 - y) ** 2 + ((self.height-1) / 2 - z) ** 2) ** 0.5
 
-                    if distanceFromCenter > 3 and not focusFlag == 0:
-                        self.tabWidgetBox.func.SetAmplitude(0)
-                        focusFlag = 0
-                    elif 3 >= distanceFromCenter > 2 and not focusFlag == 1:
-                        self.tabWidgetBox.func.SetAmplitude(1)
-                        focusFlag = 1
-                    elif distanceFromCenter <= 2 and not focusFlag == 2:
-                        self.tabWidgetBox.func.SetAmplitude(5)
-                        focusFlag = 2
+                    try:
+                        if distanceFromCenter > 3 and not focusFlag == 0:
+                            self.tabWidgetBox.func.SetAmplitude("1", 0)
+                            focusFlag = 0
+                        elif 3 >= distanceFromCenter > 2 and not focusFlag == 1:
+                            self.tabWidgetBox.func.SetAmplitude("1", 1)
+                            focusFlag = 1
+                        elif distanceFromCenter <= 2 and not focusFlag == 2:
+                            self.tabWidgetBox.func.SetAmplitude("1", 5)
+                            focusFlag = 2
+                    except:
+                        self.feedback_Update.append("Error setting function generator")
+
 
                     position_index = str(x) + "," + str(y) + "," + str(z)
 
-                    galil_x = self.xCoordinates[x] * self.config["galil_mmConversion"]
-                    galil_y = self.yCoordinates[y] * self.config["galil_mmConversion"]
-                    galil_z = self.zCoordinates[z] * self.config["galil_mmConversion"]
+                    try:
+                        galil_x = self.xCoordinates[x] * self.config["galil_mmConversion"]
+                        galil_y = self.yCoordinates[y] * self.config["galil_mmConversion"]
+                        galil_z = self.zCoordinates[z] * self.config["galil_mmConversion"]
 
-                    # For testing, remove later
-                    print("Motor coordinates:" + str(galil_x) + "," + str(galil_y) + "," + str(galil_z))
+                        # For testing, remove later
+                        print("Motor coordinates:" + str(galil_x) + "," + str(galil_y) + "," + str(galil_z))
 
-                    # move robot to galil_x, galil_y, galil_z and wait for it to stop
+                        # move robot to galil_x, galil_y, galil_z and wait for it to stop
 
-                    self.Galil.handle.GCommand('PA {0},{1},{2}'.format(galil_x, galil_y, galil_z))
-                    self.Galil.handle.GCommand('BG ABC')
+                        self.Galil.handle.GCommand('PA {0},{1},{2}'.format(galil_x, galil_y, galil_z))
+                        self.Galil.handle.GCommand('BG ABC')
+                    except:
+                        self.feedback_Update.append("Error moving motors")
+                        if self.config["end_scan_on_errors"]:
+                            try:
+                                self.f.close()
+                            finally:
+                                self.end_scan()
+                                return
 
                     while self.Galil.isMoving():
                         t.sleep(0.05)
@@ -959,7 +972,8 @@ class MainWindow(QMainWindow):
                                           amplitude=self.config["siglent_amplitudeV"],
                                           period=self.config["siglent_burstPeriodS"],
                                           cycles=self.config["siglent_cycles"],
-                                          output=self.config["siglent_output"])
+                                          C1output=self.config["siglent_C1output"],
+                                          C2output=self.config["siglent_C2output"])
         except:
             self.feedback_Update.append("Function generator failed to connect, make sure one is connected and restart")
 
@@ -1158,6 +1172,11 @@ class tabWidget(QWidget):
         self.picoConfirmBtn = QPushButton('Confirm Settings')
         self.picoConfirmBtn.pressed.connect(self.pico_confirm_data)  # Press to activate function
 
+        self.picoOnOffBtn = QPushButton('Toggle capture')
+        self.picoOnOffBtn.setCheckable(True)
+        self.picoOnOffBtn.setStyleSheet("background-color : green")
+        self.picoOnOffBtn.pressed.connect(self.pico_toggle_capture)  # Press to activate function
+
         # Setting the layout to be grid
         self.tab1.setLayout(self.gridTab1)
 
@@ -1181,6 +1200,7 @@ class tabWidget(QWidget):
         self.gridTab1.addWidget(self.preTriggerSamplesSpinBox, 6, 1)
         self.gridTab1.addWidget(self.postTriggerSamplesSpinBox, 7, 1)
         self.gridTab1.addWidget(self.waveformsSpinBox, 8, 1)
+        self.gridTab1.addWidget(self.picoOnOffBtn, 9, 0)
         self.gridTab1.addWidget(self.picoConfirmBtn, 9, 1)
 
         # FUNCTION GENERATOR TAB (TAB 2)
@@ -1191,22 +1211,19 @@ class tabWidget(QWidget):
         self.amplitudeLabel = QLabel()
         self.periodLabel = QLabel()
         self.cyclesLabel = QLabel()
-        self.ch1Label = QLabel()
-        self.ch2Label = QLabel()
+        self.outputLabel = QLabel()
 
         self.freqLabel.setText('Frequency (kHz)')
         self.amplitudeLabel.setText('Amplitude (mV)')
         self.periodLabel.setText('period (microseconds)')
         self.cyclesLabel.setText('Cycles per burst')
-        self.ch1Label.setText('CH 1')
-        self.ch2Label.setText('CH 2')
+        self.outputLabel.setText('Output')
 
         self.freqLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.amplitudeLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.periodLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.cyclesLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        self.ch1Label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        self.ch2Label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.outputLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
         self.freqSpinBox = QSpinBox()
         self.freqSpinBox.setMinimum(0)
@@ -1225,28 +1242,28 @@ class tabWidget(QWidget):
         self.cyclesSpinBox.setMaximum(float(self.config["siglent_cyclesMax"]))
         self.cyclesSpinBox.setValue(float(self.config["siglent_cycles"]))
 
-        self.ch1Combo = QComboBox(self)
-        self.ch1Combo.addItems(['ON', 'OFF'])
-        self.ch2Combo = QComboBox(self)
-        self.ch2Combo.addItems(['ON', 'OFF'])
+        self.outputCombo = QComboBox(self)
+        self.outputCombo.addItems(['ON', 'OFF'])
 
-        self.functionConfirmBtn = QPushButton('Confirm Settings')
-        self.functionConfirmBtn.pressed.connect(self.func_confirm_data)
+        self.functionC1ConfirmBtn = QPushButton('Set channel 1 Settings')
+        self.functionC1ConfirmBtn.pressed.connect(self.func_C1_confirm_data)
+
+        self.functionC2ConfirmBtn = QPushButton('Set channel 2 Settings')
+        self.functionC2ConfirmBtn.pressed.connect(self.func_C2_confirm_data)
 
         # Func Gen Tab - Layout
         self.gridTab2.addWidget(self.freqLabel, 0, 0)
         self.gridTab2.addWidget(self.amplitudeLabel, 1, 0)
         self.gridTab2.addWidget(self.periodLabel, 2, 0)
         self.gridTab2.addWidget(self.cyclesLabel, 3, 0)
-        self.gridTab2.addWidget(self.ch1Label, 4, 0)
-        self.gridTab2.addWidget(self.ch2Label, 5, 0)
+        self.gridTab2.addWidget(self.outputLabel, 4, 0)
         self.gridTab2.addWidget(self.freqSpinBox, 0, 1)
         self.gridTab2.addWidget(self.amplitudeSpinBox, 1, 1)
         self.gridTab2.addWidget(self.periodSpinBox, 2, 1)
         self.gridTab2.addWidget(self.cyclesSpinBox, 3, 1)
-        self.gridTab2.addWidget(self.ch1Combo, 4, 1)
-        self.gridTab2.addWidget(self.ch2Combo, 5, 1)
-        self.gridTab2.addWidget(self.functionConfirmBtn, 6, 1)
+        self.gridTab2.addWidget(self.outputCombo, 4, 1)
+        self.gridTab2.addWidget(self.functionC1ConfirmBtn, 5, 0)
+        self.gridTab2.addWidget(self.functionC2ConfirmBtn, 5, 1)
 
         # MOTORS TAB
         self.tab3.setLayout(self.gridTab3)  # Setting the Layout for the widgets
@@ -1302,7 +1319,11 @@ class tabWidget(QWidget):
 
     def pico_confirm_data(self):
         self.jogging = False
-        self.pico.close()
+
+        try:
+            self.pico.close()
+        except:
+            pass
 
         self.pico.setup(range_mV=int(self.rangeCombo.currentText()), blocks=self.waveformsSpinBox.value(),
                         timebase=self.intervalCombo.currentIndex() + 2, external=self.triggerCombo.currentIndex(),
@@ -1311,25 +1332,47 @@ class tabWidget(QWidget):
                         postSamples=self.postTriggerSamplesSpinBox.value())
 
         self.feedback_Update.append("Picoscope capture time = " + str(self.pico.getRuntime()) + " ns")
+        self.picoOnOffBtn.setChecked(False)
+        self.picoOnOffBtn.setStyleSheet("background-color : green")
 
-        self.pico.block()
-        average = np.mean(self.pico.data_mVRay, axis=0)
-        print("Standard deviation of signal (mV) = " + str(np.std(average)))
-        self.plotWidget.plot(self.pico.time, average, clear=True)
-        pg.QtGui.QApplication.processEvents()
-
-        self.jogging = True
-        startTime = t.time()
-        for i in range(10):
-            if self.jogging == False:
-                return
-            self.displayData()
-
-        print("10 Plots displayed in " + str(t.time() - startTime) + " seconds. Display frequency is " + str(
-            10 / (t.time() - startTime)) + "Hz")
 
         while self.jogging:
             self.displayData()
+
+    def pico_toggle_capture(self):
+        # if button is checked
+        if self.picoOnOffBtn.isChecked():
+            # setting background color to light-blue
+            self.picoOnOffBtn.setStyleSheet("background-color : green")
+            self.jogging = False
+            return
+
+        # if it is unchecked
+        else:
+            self.picoOnOffBtn.setStyleSheet("background-color : red")
+            try:
+                self.pico.block()
+                average = np.mean(self.pico.data_mVRay, axis=0)
+                self.feedback_Update.append("Standard deviation of signal (mV) = " + str(np.std(average)))
+                self.plotWidget.plot(self.pico.time, average, clear=True)
+                pg.QtGui.QApplication.processEvents()
+
+                self.jogging = True
+                startTime = t.time()
+                for i in range(10):
+                    if self.jogging == False:
+                        return
+                    self.displayData()
+
+                self.feedback_Update.append("10 Plots displayed in " + str(t.time() - startTime) + " seconds. Display frequency is " + str(
+                    10 / (t.time() - startTime)) + "Hz")
+
+                while self.jogging:
+                    self.displayData()
+            except:
+                self.feedback_Update.append("Error occurred during realtime plotting")
+
+
 
     def displayData(self):
         self.pico.block()
@@ -1337,12 +1380,19 @@ class tabWidget(QWidget):
         self.plotWidget.plot(self.pico.time, average, clear=True)
         pg.QtGui.QApplication.processEvents()
 
-    def func_confirm_data(self):
-        self.func = FunctionGenerator(frequency=str(self.freqSpinBox.value() * 1000),
+    def func_C1_confirm_data(self):
+        self.func.setup(channel = "1", frequency=str(self.freqSpinBox.value() * 1000),
                                       amplitude=str(self.amplitudeSpinBox.value() / 1000),
                                       period=str(self.periodSpinBox.value() / 1000000),
                                       cycles=str(self.cyclesSpinBox.value()),
-                                      output='ON')
+                                      output=self.outputCombo.currentText())
+
+    def func_C2_confirm_data(self):
+        self.func.setup(channel = "2", frequency=str(self.freqSpinBox.value() * 1000),
+                                      amplitude=str(self.amplitudeSpinBox.value() / 1000),
+                                      period=str(self.periodSpinBox.value() / 1000000),
+                                      cycles=str(self.cyclesSpinBox.value()),
+                                      output = self.outputCombo.currentText())
 
     def disable_buttons(self):
         self.delaySpinBox.setEnabled(False)
