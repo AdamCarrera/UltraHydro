@@ -309,19 +309,19 @@ class MainWindow(QMainWindow):
         self.zPosition.setReadOnly(True)
 
         # Test Box - QPushButton
-        self.xUpBtn = QPushButton('X Backward')
+        self.xUpBtn = QPushButton('X Forward')
         self.xUpBtn.pressed.connect(self.X_Up)
         self.xUpBtn.released.connect(self.stop_motion)
 
-        self.xDownBtn = QPushButton('X Forward')
+        self.xDownBtn = QPushButton('X Backward')
         self.xDownBtn.pressed.connect(self.X_Down)
         self.xDownBtn.released.connect(self.stop_motion)
 
-        self.yUpBtn = QPushButton('Y Right')
+        self.yUpBtn = QPushButton('Y Left')
         self.yUpBtn.pressed.connect(self.Y_Up)
         self.yUpBtn.released.connect(self.stop_motion)
 
-        self.yDownBtn = QPushButton('Y Left')
+        self.yDownBtn = QPushButton('Y Right')
         self.yDownBtn.pressed.connect(self.Y_Down)
         self.yDownBtn.released.connect(self.stop_motion)
 
@@ -661,15 +661,15 @@ class MainWindow(QMainWindow):
                             return
                     pointStartTime = t.time()
 
-                    distanceFromCenter = ((self.width / 2 - x) ** 2 + (self.depth / 2 - y) ** 2 + (self.height / 2 - z) ** 2) ** 0.5
+                    distanceFromCenter = (((self.width-1) / 2 - x) ** 2 + ((self.depth-1) / 2 - y) ** 2 + ((self.height-1) / 2 - z) ** 2) ** 0.5
 
-                    if distanceFromCenter > 5 and not focusFlag == 0:
+                    if distanceFromCenter > 3 and not focusFlag == 0:
                         self.tabWidgetBox.func.SetAmplitude(0)
                         focusFlag = 0
-                    elif 5 >= distanceFromCenter > 2.5 and not focusFlag == 1:
+                    elif 3 >= distanceFromCenter > 2 and not focusFlag == 1:
                         self.tabWidgetBox.func.SetAmplitude(1)
                         focusFlag = 1
-                    elif distanceFromCenter <= 2.5 and not focusFlag == 2:
+                    elif distanceFromCenter <= 2 and not focusFlag == 2:
                         self.tabWidgetBox.func.SetAmplitude(5)
                         focusFlag = 2
 
@@ -684,15 +684,11 @@ class MainWindow(QMainWindow):
 
                     # move robot to galil_x, galil_y, galil_z and wait for it to stop
 
-                    try:
-                        self.Galil.handle.GCommand('PA {0},{1},{2}'.format(galil_x, galil_y, galil_z))
-                        self.Galil.handle.GCommand('BG ABC')
+                    self.Galil.handle.GCommand('PA {0},{1},{2}'.format(galil_x, galil_y, galil_z))
+                    self.Galil.handle.GCommand('BG ABC')
 
-                        while self.Galil.isMoving():
-                            t.sleep(0.1)
-                    except:
-                        print("Failed to move robot")
-
+                    while self.Galil.isMoving():
+                        t.sleep(0.05)
 
                     try:
                         print("Scanning position:" + position_index)
@@ -1403,6 +1399,10 @@ class tabWidget(QWidget):
         self.Galil.has_handle()
         self.Galil.toggle_handle()
         print("Toggle pressed")
+        if self.Galil.has_handle():
+            self.feedback_Update.append("Connected to Motor Controller")
+        else:
+            self.feedback_Update.append("Disconnected from motor Controller")
 
     def createPlotWidget(self):
         plotWidget = pg.PlotWidget()
