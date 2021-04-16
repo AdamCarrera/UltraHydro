@@ -5,6 +5,7 @@ from PySide2.QtWidgets import *
 from PySide2.QtCore import *
 from PySide2.QtPrintSupport import *
 from PySide2.QtGui import QIcon
+from PySide2 import QtGui, QtCore
 import os
 import webbrowser
 from galilBackend import Galil
@@ -24,15 +25,29 @@ from Siglent import FunctionGenerator
 import pyqtgraph as pg
 import time as t
 
+keymap = {}
+for key, value in vars(Qt).items():
+    if isinstance(value, Qt.Key):
+        keymap[value] = key.partition('_')[2]
+
+modmap = {
+    Qt.ControlModifier: keymap[Qt.Key_Control],
+    Qt.AltModifier: keymap[Qt.Key_Alt],
+    Qt.ShiftModifier: keymap[Qt.Key_Shift],
+    Qt.MetaModifier: keymap[Qt.Key_Meta],
+    Qt.GroupSwitchModifier: keymap[Qt.Key_AltGr],
+    Qt.KeypadModifier: keymap[Qt.Key_NumLock],
+}
+
 
 class MainWindow(QMainWindow):
-
     def __init__(self):  # creates a constructor for the MainWindow Object
         super().__init__()
         self.yEnabled = False
         self.xEnabled = False
         self.zEnabled = False
         self.feedback_Update = QTextBrowser()
+        self.Keyboard_Update = False
         self.scanData = None
         self.config = None
         self.load_parameters()
@@ -92,14 +107,6 @@ class MainWindow(QMainWindow):
         print_action.triggered.connect(self.file_print)
         file_menu.addAction(print_action)
 
-        edit_menu = self.menuBar().addMenu("&Edit")
-
-        edit_menu = self.menuBar().addMenu("&View")
-
-        edit_menu = self.menuBar().addMenu("&Tools")
-
-        edit_menu = self.menuBar().addMenu("&Window")
-
         # adding Help on menu bar and open a specific file saved as "Help"
         file_menu = self.menuBar().addMenu("&Help")
 
@@ -107,12 +114,6 @@ class MainWindow(QMainWindow):
         Show_Help_action.setStatusTip("Open Help")
         Show_Help_action.triggered.connect(self.Show_Help)
         file_menu.addAction(Show_Help_action)
-
-        edit_menu = self.menuBar().addMenu("&Tools")
-
-        edit_menu = self.menuBar().addMenu("&Window")
-
-        edit_menu = self.menuBar().addMenu("&Help")
 
     def ui_components(self):
         # Notes of what I've learned
@@ -125,6 +126,9 @@ class MainWindow(QMainWindow):
         # LAYOUTS
         # LAYOUTS - Vertical Layout
         # Used for setting a vertical layout for certain groupboxes
+        self.releaseKeyboard()
+
+
         self.vbox1 = QVBoxLayout()
         self.vbox2 = QVBoxLayout()
         self.vbox3 = QVBoxLayout()
@@ -157,7 +161,7 @@ class MainWindow(QMainWindow):
         # HARDWARE SETTINGS - Tab Widget
         # Assigning a variable from the Class tabWidget
 
-        self.tabWidgetBox = tabWidget(self, self.config, self.pico, self.func, self.feedback_Update, galil=self.Galil)
+        self.tabWidgetBox = tabWidget(self, self.config, self.pico,self.Keyboard_Update,self.func, self.feedback_Update,galil=self.Galil)
 
         # Adding Group Boxes to the widget
         self.giantGrid1.addWidget(self.tabGroupBox, 0, 0)  # Adds the Group Box to the Grid Layout
@@ -179,7 +183,6 @@ class MainWindow(QMainWindow):
         self.editor = QPlainTextEdit()
         self.vbox2.addWidget(self.editor)
         self.saveNotesBtn = QPushButton('Save Notes')
-        self.saveNotesBtn.setToolTip("Save notes to local drive")
         self.vbox2.addWidget(self.saveNotesBtn)
 
         # Adding action to the save button
@@ -266,7 +269,6 @@ class MainWindow(QMainWindow):
         self.zSamplesSb.setRange(1, self.config["galil_maxSamples"])
 
         self.Scan = QPushButton('Scan')
-        self.Scan.setToolTip("Start scan with current settings")
         self.Scan.pressed.connect(self.scan)
 
         self.xLoadSb = QSpinBox()  # Load position spinbox
@@ -313,41 +315,33 @@ class MainWindow(QMainWindow):
         # Test Box - QPushButton
 
         self.xUpBtn = QPushButton('X Up')
-        self.xUpBtn.setToolTip("Jog X up")
         self.xUpBtn.pressed.connect(self.X_Up)
         self.xUpBtn.released.connect(self.stop_motion)
 
         self.xDownBtn = QPushButton('X Down')
-        self.xDownBtn.setToolTip("Jog X downwards")
         self.xDownBtn.pressed.connect(self.X_Down)
         self.xDownBtn.released.connect(self.stop_motion)
 
         self.yUpBtn = QPushButton('Y Up')
-        self.yUpBtn.setToolTip("Jog Y upwards")
         self.yUpBtn.pressed.connect(self.Y_Up)
         self.yUpBtn.released.connect(self.stop_motion)
 
         self.yDownBtn = QPushButton('Y Down')
-        self.yDownBtn.setToolTip("Jog Y downwards")
         self.yDownBtn.pressed.connect(self.Y_Down)
         self.yDownBtn.released.connect(self.stop_motion)
 
         self.zUpBtn = QPushButton('Z Up')
-        self.zUpBtn.setToolTip("Jog Z upwards")
         self.zUpBtn.pressed.connect(self.Z_Up)
         self.zUpBtn.released.connect(self.stop_motion)
 
         self.zDownBtn = QPushButton('Z Down')
-        self.zDownBtn.setToolTip("Jog Z downwards")
         self.zDownBtn.pressed.connect(self.Z_Down)
         self.zDownBtn.released.connect(self.stop_motion)
 
         self.setHomeBtn = QPushButton('Set Home')
-        self.setHomeBtn.setToolTip("Set current position as Home")
         self.setHomeBtn.clicked.connect(self.set_origin_pressed)
 
         self.goHomeBtn = QPushButton('Go Home')
-        self.goHomeBtn.setToolTip("Go to Home coordinates")
 
         # Test Box - QComboBox
         self.speedCombo = QComboBox()
@@ -356,7 +350,6 @@ class MainWindow(QMainWindow):
         self.keyboardCombo.addItems(['OFF', 'ON'])
 
         self.AbortBtn = QPushButton('Abort')
-        self.AbortBtn.setToolTip("Cancel current scan")
         self.AbortBtn.setStyleSheet("background-color: red")
         self.AbortBtn.pressed.connect(self.abort_button)
 
@@ -427,6 +420,7 @@ class MainWindow(QMainWindow):
         # Updating feedback message
         self.vbox5.addWidget(self.feedback_Update)
         self.feedback_Update.setObjectName("feedback_Update")
+        self.feedback_Update.setFocusPolicy(QtCore.Qt.NoFocus)
 
         self.giantGrid2.addWidget(self.feedbackGroupBox, 2, 0, 1, 1)
 
@@ -884,6 +878,7 @@ class MainWindow(QMainWindow):
         self.zCheckBox.setEnabled(True)
         self.checkBox_state()
 
+
     @Slot(int)
     def abort_button(self):
         self.scanning = False
@@ -908,6 +903,7 @@ class MainWindow(QMainWindow):
     def set_origin_pressed(self):
         self.Galil.set_origin()
         print('origin set')
+
 
     def X_Up(self):
         # Check if speed is negative, invert if true
@@ -1025,14 +1021,112 @@ class MainWindow(QMainWindow):
             event.ignore()
 
 
+    def keyevent_to_string(self,event):
+        sequence = []
+        for modifier, text in modmap.items():
+            if event.modifiers() & modifier:
+                sequence.append(text)
+        key = keymap.get(event.key(), event.text())
+        if key not in sequence:
+            sequence.append(key)
+        return '+'.join(sequence)
+
+    def keyPressEvent(self, event):
+        self.grabKeyboard()
+        self.setFocus()
+        event_value = self.keyevent_to_string(event)
+        print(event_value)
+        print(f"keyboard update is {self.tabWidgetBox.Keyboard_Update}")
+        if self.tabWidgetBox.Keyboard_Update == True:
+            if event_value == "Control+Up" and not event.isAutoRepeat():
+                self.grabKeyboard()
+                self.setFocus()
+                Progress = "UP key pressed on the Keyboard"
+                self.feedback_Update.append(str(Progress))
+                if self.Galil.jogSpeed['x'] < 0:
+                    self.Galil.jogSpeed['x'] = self.Galil.jogSpeed['x'] * -1
+                self.Galil.jog('x')
+                self.Galil.begin_motion('A')
+                print('jogging!')
+
+            elif event_value == "Control+Down" and not event.isAutoRepeat():
+                Progress = "Down key pressed on the Keyboard"
+                self.feedback_Update.append(str(Progress))
+                if self.Galil.jogSpeed['x'] > 0:
+                    self.Galil.jogSpeed['x'] = -1 * self.Galil.jogSpeed['x']
+                self.Galil.jog('x')
+                self.Galil.begin_motion('A')
+                print('jogging!')
+
+            elif event_value == "Control+Right" and not event.isAutoRepeat():
+                Progress = "Right key pressed on the Keyboard"
+                self.feedback_Update.append(str(Progress))
+                if self.Galil.jogSpeed['y'] < 0:
+                    self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
+                self.Galil.jog('y')
+                self.Galil.begin_motion('B')
+                print('jogging!')
+
+            elif event_value == "Control+Left" and not event.isAutoRepeat():
+                Progress = "Left key pressed on the Keyboard"
+                self.feedback_Update.append(str(Progress))
+                if self.Galil.jogSpeed['y'] > 0:
+                    self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
+                self.Galil.jog('y')
+                self.Galil.begin_motion('B')
+                print('jogging!')
+
+            elif event_value == "Control+Equal" and not event.isAutoRepeat():
+                Progress = "Forward key pressed on the Keyboard"
+                self.feedback_Update.append(str(Progress))
+                if self.Galil.jogSpeed['z'] < 0:
+                    self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
+                self.Galil.jog('z')
+                self.Galil.begin_motion('C')
+                print('jogging!')
+
+            elif event_value == "Control+Minus" and not event.isAutoRepeat():
+                Progress = "Backward key pressed on the Keyboard"
+                self.feedback_Update.append(str(Progress))
+                if self.Galil.jogSpeed['z'] > 0:
+                    self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
+                self.Galil.jog('z')
+                self.Galil.begin_motion('C')
+                print('jogging!')
+            else:
+                self.releaseKeyboard()
+        else:
+            self.releaseKeyboard()
+
+    def keyReleaseEvent(self, event):
+        event_value = self.keyevent_to_string(event)
+        #self.Galil.stop_motion()
+
+        if event_value == "Control+Up" or event_value == "Control+Down" or event_value == "Control+Right" or event_value == "Control+Left" or event_value == "Control+Minus" or event_value == "Control+Equal":
+            if not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == True:
+                Progress = "Jogging stopped"
+                self.feedback_Update.append(str(Progress))
+                self.releaseKeyboard()
+                # self.Galil.stop_motion()
+                self.stop_motion
+            elif not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == False:
+                Progress = "Keyboard jogging is disabled"
+                self.feedback_Update.append(str(Progress))
+                self.releaseKeyboard()
+                # self.Galil.stop_motion()
+                self.stop_motion
+
 # Tab Widget in its own Class
 class tabWidget(QWidget):
-    def __init__(self, parent, parameters, picoscope, siglent, feedback, galil=None):
+
+    def __init__(self, parent, parameters, picoscope, Keyboard_feedback, siglent, feedback, galil=None):
         self.feedback_Update = feedback
+        self.Keyboard_Update = Keyboard_feedback
         self.screen_resolution = None
         self.pgOffset = {}  # empty dictionary
         self.jogging = False
         self.scanning = False
+
 
         if galil is not None:
             self.Galil = galil
@@ -1285,20 +1379,23 @@ class tabWidget(QWidget):
         self.speedLabel = QLabel()
 
         self.keyboardLabel.setText('Keyboard Control')
-        self.speedLabel.setText('Jog Speed')
+        self.speedLabel.setText('Speed')
 
         self.keyboardLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.speedLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
         self.speedCombo = QComboBox()
         self.speedCombo.addItems(['LOW', 'MEDIUM', 'HIGH'])
-        self.speedCombo.setCurrentText('MEDIUM')
         self.keyboardCombo = QComboBox()
         self.keyboardCombo.addItems(['OFF', 'ON'])
+        self.keyboardCombo.setFocusPolicy(QtCore.Qt.NoFocus)
+
+        self.keyboardCombo.activated[str].connect(self.confirm_Change)
 
 
-        # If statement for speedCombo TEST
-        self.speedCombo.activated.connect(self.speed_chosen)
+        #text = str(self.speedCombo.currentText())
+        #if text == "ON":
+        #    print("Keyboard is on")
 
 
         self.connectBtn = QPushButton('Toggle Connection')
@@ -1331,25 +1428,6 @@ class tabWidget(QWidget):
 
         self.setLayout(self.mainVbox)
 
-    # Function for Jog Speed / NEXT MAKE IT INTO
-    def speed_chosen(self):
-        if self.speedCombo.currentText() == 'MEDIUM':
-            self.Galil.jogSpeed['x'] = 100000   # Setting job speed to medium
-            self.Galil.jogSpeed['y'] = 100000
-            self.Galil.jogSpeed['z'] = 100000
-            print('Jog speed set to medium')
-            self.feedback_Update.append("Jog speed set to medium")
-        elif self.speedCombo.currentText() == 'HIGH':
-            self.Galil.jogSpeed['x'] = 150000  # Setting job speed to medium
-            self.Galil.jogSpeed['y'] = 150000
-            self.Galil.jogSpeed['z'] = 150000
-            print('Jog speed set to high')
-            self.feedback_Update.append("Jog speed set to high")
-        else:
-            self.Galil.jogSpeed['x'] = 50000  # Setting job speed to medium
-            self.Galil.jogSpeed['y'] = 50000
-            self.Galil.jogSpeed['z'] = 50000
-            self.feedback_Update.append("Jog speed set to low")
 
     # This boolean variable can be set to false to stop the jogging loop
     def set_jogging(self, jog):
@@ -1474,11 +1552,18 @@ class tabWidget(QWidget):
         self.motorsConfirmBtn.setEnabled(True)
         self.periodSpinBox.setEnabled(True)
 
-    def confirm_Change(self):
-        #print(self.scanSize)
-        print("Scan Size Changed")
-        #print(self.stepSize)
-        print("Step Size Changed") # ask if this is appropriate
+    def confirm_Change(self,value):
+        Keyboard_value = value
+        if Keyboard_value == "ON":
+            print(Keyboard_value)
+            self.Keyboard_Update = True
+            Progress = 'Keyboard jogging is enabled \n Press "Ctrl + arrow keys" to jog\n Press "Ctrl and + key" to move forward \n Press "Ctrl and - key" to move backward'
+            self.feedback_Update.append(str(Progress))
+        elif Keyboard_value == "OFF":
+            print(Keyboard_value)
+            self.Keyboard_Update = False
+            Progress = "Keyboard jogging is disabled"
+            self.feedback_Update.append(str(Progress))
 
 
     def motors_confirm_data(self):
@@ -1594,7 +1679,6 @@ def main():
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())
-
 
 if __name__ == '__main__':
     main()
