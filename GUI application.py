@@ -179,6 +179,7 @@ class MainWindow(QMainWindow):
         self.editor = QPlainTextEdit()
         self.vbox2.addWidget(self.editor)
         self.saveNotesBtn = QPushButton('Save Notes')
+        self.saveNotesBtn.setToolTip("Save notes to local drive")
         self.vbox2.addWidget(self.saveNotesBtn)
 
         # Adding action to the save button
@@ -265,6 +266,7 @@ class MainWindow(QMainWindow):
         self.zSamplesSb.setRange(1, self.config["galil_maxSamples"])
 
         self.Scan = QPushButton('Scan')
+        self.Scan.setToolTip("Start scan with current settings")
         self.Scan.pressed.connect(self.scan)
 
         self.xLoadSb = QSpinBox()  # Load position spinbox
@@ -312,34 +314,42 @@ class MainWindow(QMainWindow):
 
         # Test Box - QPushButton
         self.xUpBtn = QPushButton('X Up')
+        self.xUpBtn.setToolTip("Jog X up")
         self.xUpBtn.pressed.connect(self.X_Up)
         self.xUpBtn.released.connect(self.stop_motion)
 
         self.xDownBtn = QPushButton('X Down')
+        self.xDownBtn.setToolTip("Jog X downwards")
         self.xDownBtn.pressed.connect(self.X_Down)
         self.xDownBtn.released.connect(self.stop_motion)
 
         self.yUpBtn = QPushButton('Y Up')
+        self.yUpBtn.setToolTip("Jog Y upwards")
         self.yUpBtn.pressed.connect(self.Y_Up)
         self.yUpBtn.released.connect(self.stop_motion)
 
         self.yDownBtn = QPushButton('Y Down')
+        self.yDownBtn.setToolTip("Jog Y downwards")
         self.yDownBtn.pressed.connect(self.Y_Down)
         self.yDownBtn.released.connect(self.stop_motion)
 
         self.zUpBtn = QPushButton('Z Up')
+        self.zUpBtn.setToolTip("Jog Z upwards")
         self.zUpBtn.pressed.connect(self.Z_Up)
         self.zUpBtn.released.connect(self.stop_motion)
 
         self.zDownBtn = QPushButton('Z Down')
+        self.zDownBtn.setToolTip("Jog Z downwards")
         self.zDownBtn.pressed.connect(self.Z_Down)
         self.zDownBtn.released.connect(self.stop_motion)
 
         self.setHomeBtn = QPushButton('Set Home')
+        self.setHomeBtn.setToolTip("Set current position as Home")
         self.setHomeBtn.clicked.connect(self.set_origin_pressed)
 
 
         self.goHomeBtn = QPushButton('Go Home')
+        self.goHomeBtn.setToolTip("Go to Home coordinates")
 
         # Test Box - QComboBox
         self.speedCombo = QComboBox()
@@ -348,6 +358,7 @@ class MainWindow(QMainWindow):
         self.keyboardCombo.addItems(['OFF', 'ON'])
 
         self.AbortBtn = QPushButton('Abort')
+        self.AbortBtn.setToolTip("Cancel current scan")
         self.AbortBtn.setStyleSheet("background-color: red")
         self.AbortBtn.pressed.connect(self.abort_button)
 
@@ -1239,15 +1250,21 @@ class tabWidget(QWidget):
         self.speedLabel = QLabel()
 
         self.keyboardLabel.setText('Keyboard Control')
-        self.speedLabel.setText('Speed')
+        self.speedLabel.setText('Jog Speed')
 
         self.keyboardLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.speedLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
         self.speedCombo = QComboBox()
         self.speedCombo.addItems(['LOW', 'MEDIUM', 'HIGH'])
+        self.speedCombo.setCurrentText('MEDIUM')
         self.keyboardCombo = QComboBox()
         self.keyboardCombo.addItems(['OFF', 'ON'])
+
+
+        # If statement for speedCombo TEST
+        self.speedCombo.activated.connect(self.speed_chosen)
+
 
         self.connectBtn = QPushButton('Toggle Connection')
         self.connectBtn.pressed.connect(self.toggle_connection)
@@ -1278,6 +1295,26 @@ class tabWidget(QWidget):
         self.mainVbox.addWidget(self.graphTabs)
 
         self.setLayout(self.mainVbox)
+
+    # Function for Jog Speed / NEXT MAKE IT INTO
+    def speed_chosen(self):
+        if self.speedCombo.currentText() == 'MEDIUM':
+            self.Galil.jogSpeed['x'] = 100000   # Setting job speed to medium
+            self.Galil.jogSpeed['y'] = 100000
+            self.Galil.jogSpeed['z'] = 100000
+            print('Jog speed set to medium')
+            self.feedback_Update.append("Jog speed set to medium")
+        elif self.speedCombo.currentText() == 'HIGH':
+            self.Galil.jogSpeed['x'] = 150000  # Setting job speed to medium
+            self.Galil.jogSpeed['y'] = 150000
+            self.Galil.jogSpeed['z'] = 150000
+            print('Jog speed set to high')
+            self.feedback_Update.append("Jog speed set to high")
+        else:
+            self.Galil.jogSpeed['x'] = 50000  # Setting job speed to medium
+            self.Galil.jogSpeed['y'] = 50000
+            self.Galil.jogSpeed['z'] = 50000
+            self.feedback_Update.append("Jog speed set to low")
 
     # This boolean variable can be set to false to stop the jogging loop
     def set_jogging(self, jog):
@@ -1371,10 +1408,11 @@ class tabWidget(QWidget):
         self.periodSpinBox.setEnabled(True)
 
     def confirm_Change(self):
-        print(self.scanSize)
+        #print(self.scanSize)
         print("Scan Size Changed")
-        print(self.stepSize)
-        print("Step Size Changed")
+        #print(self.stepSize)
+        print("Step Size Changed") # ask if this is appropriate
+
 
     def motors_confirm_data(self):
         print("This function has not yet been developed")
