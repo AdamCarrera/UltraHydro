@@ -1038,7 +1038,7 @@ class MainWindow(QMainWindow):
         print(event_value)
         print(f"keyboard update is {self.tabWidgetBox.Keyboard_Update}")
         if self.tabWidgetBox.Keyboard_Update == True:
-            if event_value == "Control+Up" and not event.isAutoRepeat():
+            if event_value == "Control+Up" :
                 self.grabKeyboard()
                 self.setFocus()
                 Progress = "UP key pressed on the Keyboard"
@@ -1049,7 +1049,7 @@ class MainWindow(QMainWindow):
                 self.Galil.begin_motion('A')
                 print('jogging!')
 
-            elif event_value == "Control+Down" and not event.isAutoRepeat():
+            elif event_value == "Control+Down" :
                 Progress = "Down key pressed on the Keyboard"
                 self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['x'] > 0:
@@ -1058,17 +1058,8 @@ class MainWindow(QMainWindow):
                 self.Galil.begin_motion('A')
                 print('jogging!')
 
-            elif event_value == "Control+Right" and not event.isAutoRepeat():
+            elif event_value == "Control+Right" :
                 Progress = "Right key pressed on the Keyboard"
-                self.feedback_Update.append(str(Progress))
-                if self.Galil.jogSpeed['y'] < 0:
-                    self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
-                self.Galil.jog('y')
-                self.Galil.begin_motion('B')
-                print('jogging!')
-
-            elif event_value == "Control+Left" and not event.isAutoRepeat():
-                Progress = "Left key pressed on the Keyboard"
                 self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['y'] > 0:
                     self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
@@ -1076,7 +1067,18 @@ class MainWindow(QMainWindow):
                 self.Galil.begin_motion('B')
                 print('jogging!')
 
-            elif event_value == "Control+Equal" and not event.isAutoRepeat():
+
+            elif event_value == "Control+Left" :
+                Progress = "Left key pressed on the Keyboard"
+                self.feedback_Update.append(str(Progress))
+                if self.Galil.jogSpeed['y'] < 0:
+                    self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
+                self.Galil.jog('y')
+                self.Galil.begin_motion('B')
+                print('jogging!')
+
+
+            elif event_value == "Control+Equal"  :
                 Progress = "Forward key pressed on the Keyboard"
                 self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['z'] < 0:
@@ -1085,7 +1087,7 @@ class MainWindow(QMainWindow):
                 self.Galil.begin_motion('C')
                 print('jogging!')
 
-            elif event_value == "Control+Minus" and not event.isAutoRepeat():
+            elif event_value == "Control+Minus"  :
                 Progress = "Backward key pressed on the Keyboard"
                 self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['z'] > 0:
@@ -1102,19 +1104,19 @@ class MainWindow(QMainWindow):
         event_value = self.keyevent_to_string(event)
         #self.Galil.stop_motion()
 
-        if event_value == "Control+Up" or event_value == "Control+Down" or event_value == "Control+Right" or event_value == "Control+Left" or event_value == "Control+Minus" or event_value == "Control+Equal":
-            if not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == True:
-                Progress = "Jogging stopped"
-                self.feedback_Update.append(str(Progress))
-                self.releaseKeyboard()
-                # self.Galil.stop_motion()
-                self.stop_motion
-            elif not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == False:
-                Progress = "Keyboard jogging is disabled"
-                self.feedback_Update.append(str(Progress))
-                self.releaseKeyboard()
-                # self.Galil.stop_motion()
-                self.stop_motion
+
+        if not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == True:
+            Progress = "Jogging stopped"
+            self.feedback_Update.append(str(Progress))
+            self.releaseKeyboard()
+            # self.Galil.stop_motion()
+            self.stop_motion()
+        elif not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == False:
+            Progress = "Keyboard jogging is disabled"
+            self.feedback_Update.append(str(Progress))
+            self.releaseKeyboard()
+            # self.Galil.stop_motion()
+            self.stop_motion()
 
 # Tab Widget in its own Class
 class tabWidget(QWidget):
