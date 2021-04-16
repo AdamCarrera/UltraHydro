@@ -9,18 +9,17 @@ class Galil:
         self.handle = gclib.py()                         # Initialize the library object
 
         self.axes = ['x', 'y', 'z']
-
         self.jogging = False
         self.jogSpeed = {}
-        self.jogSpeed['x'] = 50000                        # YAML FILE
-        self.jogSpeed['y'] = 50000
-        self.jogSpeed['z'] = 50000
+        self.jogSpeed['x'] = 20000                        # YAML FILE
+        self.jogSpeed['y'] = 20000
+        self.jogSpeed['z'] = 20000
 
 
         self.speed = {}
-        self.speed['x'] = 100000                           # YAML FILE
-        self.speed['y'] = 100000
-        self.speed['z'] = 100000
+        self.speed['x'] = 20000                           # YAML FILE
+        self.speed['y'] = 20000
+        self.speed['z'] = 20000
 
         self.xCal = 10                                   # YAML FILE
 
@@ -40,7 +39,7 @@ class Galil:
             for port in port_list.keys():
                 print("port: {0} , handle status: {1}".format(port, self.handle))
                 try:
-                    self.handle.GOpen('%s --direct -s ALL' % port)
+                    self.handle.GOpen('192.168.42.100 --direct -s ALL')
                     print(self.handle.GInfo())
                     _bConnected = True
                 except gclib.GclibError as e:
@@ -109,6 +108,7 @@ class Galil:
         try:
             self.handle.GCommand('ST')
             self.handle.GCommand('DP 0,0,0')
+            print('origin set')
         except gclib.GclibError as e:
             print("Something went wrong: {0}".format(e))
 

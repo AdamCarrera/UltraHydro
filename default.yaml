@@ -1,6 +1,6 @@
 picoscope_resolutionBits: 16
 picoscope_rangemV: 10000
-picoscope_blocks: 10
+picoscope_blocks: 1
 picoscope_blocksMax: 100
 picoscope_timebase: 2
 picoscope_externalTrigger: True
@@ -25,15 +25,17 @@ siglent_burstPeriodS: '.0001'
 siglent_burstPeriodSMax: '1'
 siglent_cycles: '5'
 siglent_cyclesMax: '100'
-siglent_output: 'ON'
-galil_mmConversion: 100000
+siglent_C1output: 'OFF'
+siglent_C2output: 'OFF'
+
+galil_mmConversion: 1
 galil_xLimit: 10000000
 galil_yLimit: 10000000
 galil_zLimit: 10000000
 galil_step: 1
 galil_maxSamples: 1000
 
-end_scan_on_errors: False
+end_scan_on_errors: True
 #nanoseconds
 plot_xMin: 0
 plot_xMax: 10000
