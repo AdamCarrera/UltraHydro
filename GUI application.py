@@ -126,6 +126,9 @@ class MainWindow(QMainWindow):
         # LAYOUTS
         # LAYOUTS - Vertical Layout
         # Used for setting a vertical layout for certain groupboxes
+        self.releaseKeyboard()
+
+
         self.vbox1 = QVBoxLayout()
         self.vbox2 = QVBoxLayout()
         self.vbox3 = QVBoxLayout()
@@ -419,6 +422,7 @@ class MainWindow(QMainWindow):
         # Updating feedback message
         self.vbox5.addWidget(self.feedback_Update)
         self.feedback_Update.setObjectName("feedback_Update")
+        self.feedback_Update.setFocusPolicy(QtCore.Qt.NoFocus)
 
         self.giantGrid2.addWidget(self.feedbackGroupBox, 2, 0, 1, 1)
 
@@ -842,6 +846,7 @@ class MainWindow(QMainWindow):
         self.zCheckBox.setEnabled(True)
         self.checkBox_state()
 
+
     @Slot(int)
     def abort_button(self):
         self.scanning = False
@@ -981,6 +986,7 @@ class MainWindow(QMainWindow):
         else:
             event.ignore()
 
+
     def keyevent_to_string(self,event):
         sequence = []
         for modifier, text in modmap.items():
@@ -991,12 +997,6 @@ class MainWindow(QMainWindow):
             sequence.append(key)
         return '+'.join(sequence)
 
-    def keyfocus(self):
-        if self.tabWidgetBox.Keyboard_Update == True:
-            self.keyPressEvent(self)
-        else:
-            self.releaseKeyboard()
-
     def keyPressEvent(self, event):
         self.grabKeyboard()
         self.setFocus()
@@ -1004,7 +1004,9 @@ class MainWindow(QMainWindow):
         print(event_value)
         print(f"keyboard update is {self.tabWidgetBox.Keyboard_Update}")
         if self.tabWidgetBox.Keyboard_Update == True:
-            if event_value == "Up" and not event.isAutoRepeat():
+            if event_value == "Control+Up" and not event.isAutoRepeat():
+                self.grabKeyboard()
+                self.setFocus()
                 Progress = "UP key pressed on the Keyboard"
                 self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['x'] < 0:
@@ -1013,7 +1015,7 @@ class MainWindow(QMainWindow):
                 self.Galil.begin_motion('A')
                 print('jogging!')
 
-            elif event_value == "Down" and not event.isAutoRepeat():
+            elif event_value == "Control+Down" and not event.isAutoRepeat():
                 Progress = "Down key pressed on the Keyboard"
                 self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['x'] > 0:
@@ -1022,7 +1024,7 @@ class MainWindow(QMainWindow):
                 self.Galil.begin_motion('A')
                 print('jogging!')
 
-            elif event_value == "Right" and not event.isAutoRepeat():
+            elif event_value == "Control+Right" and not event.isAutoRepeat():
                 Progress = "Right key pressed on the Keyboard"
                 self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['y'] < 0:
@@ -1031,7 +1033,7 @@ class MainWindow(QMainWindow):
                 self.Galil.begin_motion('B')
                 print('jogging!')
 
-            elif event_value == "Left" and not event.isAutoRepeat():
+            elif event_value == "Control+Left" and not event.isAutoRepeat():
                 Progress = "Left key pressed on the Keyboard"
                 self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['y'] > 0:
@@ -1057,18 +1059,28 @@ class MainWindow(QMainWindow):
                 self.Galil.jog('z')
                 self.Galil.begin_motion('C')
                 print('jogging!')
+            else:
+                self.releaseKeyboard()
+        else:
+            self.releaseKeyboard()
 
     def keyReleaseEvent(self, event):
         event_value = self.keyevent_to_string(event)
         #self.Galil.stop_motion()
         self.stop_motion
-        if event_value == "Up" or event_value == "Down" or event_value == "Right" or event_value == "Left" or event_value == "Control+Minus" or event_value == "Control+Equal":
-        #if not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == True:
-            print('stopping motion')
-            Progress = "Jogging stopped"
-            self.feedback_Update.append(str(Progress))
-            self.releaseKeyboard()
-
+        if event_value == "Control+Up" or event_value == "Control+Down" or event_value == "Control+Right" or event_value == "Control+Left" or event_value == "Control+Minus" or event_value == "Control+Equal":
+            if not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == True:
+                Progress = "Jogging stopped"
+                self.feedback_Update.append(str(Progress))
+                self.releaseKeyboard()
+                # self.Galil.stop_motion()
+                self.stop_motion
+            elif not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == False:
+                Progress = "Keyboard jogging is disabled"
+                self.feedback_Update.append(str(Progress))
+                self.releaseKeyboard()
+                # self.Galil.stop_motion()
+                self.stop_motion
 
 # Tab Widget in its own Class
 class tabWidget(QWidget):
@@ -1340,8 +1352,10 @@ class tabWidget(QWidget):
         self.speedCombo.addItems(['LOW', 'MEDIUM', 'HIGH'])
         self.keyboardCombo = QComboBox()
         self.keyboardCombo.addItems(['OFF', 'ON'])
+        self.keyboardCombo.setFocusPolicy(QtCore.Qt.NoFocus)
 
         self.keyboardCombo.activated[str].connect(self.confirm_Change)
+
 
         #text = str(self.speedCombo.currentText())
         #if text == "ON":
@@ -1475,13 +1489,14 @@ class tabWidget(QWidget):
         if Keyboard_value == "ON":
             print(Keyboard_value)
             self.Keyboard_Update = True
-            Progress = "Keyboard jogging is enabled \n Press Ctrl and + key to move forward \n Press Ctrl and - key to move backward"
+            Progress = 'Keyboard jogging is enabled \n Press "Ctrl + arrow keys" to jog\n Press "Ctrl and + key" to move forward \n Press "Ctrl and - key" to move backward'
             self.feedback_Update.append(str(Progress))
         elif Keyboard_value == "OFF":
             print(Keyboard_value)
             self.Keyboard_Update = False
             Progress = "Keyboard jogging is disabled"
             self.feedback_Update.append(str(Progress))
+
 
     def motors_confirm_data(self):
         print("This function has not yet been developed")
