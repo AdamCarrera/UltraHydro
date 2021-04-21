@@ -23,6 +23,7 @@ import numpy as np
 from Picoscope import Picoscope
 from Siglent import FunctionGenerator
 import pyqtgraph as pg
+import gclib
 import time as t
 
 keymap = {}
@@ -911,8 +912,11 @@ class MainWindow(QMainWindow):
         self.feedback_Update.append(str(Progress))
         if self.Galil.jogSpeed['x'] < 0:
             self.Galil.jogSpeed['x'] = self.Galil.jogSpeed['x'] * -1
-        self.Galil.jog('x')
-        self.Galil.begin_motion('A')
+        try:
+            self.Galil.jog('x')
+            self.Galil.begin_motion('A')
+        except gclib.GclibError as e:
+            self.feedback_Update.append("Controller Error: {0}".format(e))
         print('jogging!')
 
     def X_Down(self):
@@ -921,8 +925,11 @@ class MainWindow(QMainWindow):
         self.feedback_Update.append(str(Progress))
         if self.Galil.jogSpeed['x'] > 0:
             self.Galil.jogSpeed['x'] = -1 * self.Galil.jogSpeed['x']
-        self.Galil.jog('x')
-        self.Galil.begin_motion('A')
+        try:
+            self.Galil.jog('x')
+            self.Galil.begin_motion('A')
+        except gclib.GclibError as e:
+            self.feedback_Update.append("Controller Error: {0}".format(e))
         print('jogging!')
 
     def Y_Up(self):
@@ -931,8 +938,11 @@ class MainWindow(QMainWindow):
         self.feedback_Update.append(str(Progress))
         if self.Galil.jogSpeed['y'] < 0:
             self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
-        self.Galil.jog('y')
-        self.Galil.begin_motion('B')
+        try:
+            self.Galil.jog('y')
+            self.Galil.begin_motion('B')
+        except gclib.GclibError as e:
+            self.feedback_Update.append("Controller Error: {0}".format(e))
         print('jogging!')
 
     def Y_Down(self):
@@ -941,8 +951,11 @@ class MainWindow(QMainWindow):
         self.feedback_Update.append(str(Progress))
         if self.Galil.jogSpeed['y'] > 0:
             self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
-        self.Galil.jog('y')
-        self.Galil.begin_motion('B')
+        try:
+            self.Galil.jog('y')
+            self.Galil.begin_motion('B')
+        except gclib.GclibError as e:
+            self.feedback_Update.append("Controller Error: {0}".format(e))
         print('jogging!')
 
     def Z_Up(self):
@@ -951,8 +964,11 @@ class MainWindow(QMainWindow):
         self.feedback_Update.append(str(Progress))
         if self.Galil.jogSpeed['z'] < 0:
             self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
-        self.Galil.jog('z')
-        self.Galil.begin_motion('C')
+        try:
+            self.Galil.jog('z')
+            self.Galil.begin_motion('C')
+        except gclib.GclibError as e:
+            self.feedback_Update.append("Controller Error: {0}".format(e))
         print('jogging!')
 
     def Z_Down(self):
@@ -961,8 +977,11 @@ class MainWindow(QMainWindow):
         self.feedback_Update.append(str(Progress))
         if self.Galil.jogSpeed['z'] > 0:
             self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
-        self.Galil.jog('z')
-        self.Galil.begin_motion('C')
+        try:
+            self.Galil.jog('z')
+            self.Galil.begin_motion('C')
+        except gclib.GclibError as e:
+            self.feedback_Update.append("Controller Error: {0}".format(e))
         print('jogging!')
 
     def stop_motion(self):
@@ -1398,8 +1417,8 @@ class tabWidget(QWidget):
         #if text == "ON":
         #    print("Keyboard is on")
 
-
         self.connectBtn = QPushButton('Toggle Connection')
+        self.connectBtn.setStyleSheet("background-color : red")
         self.connectBtn.pressed.connect(self.toggle_connection)
 
         # Removing for now as it is redundant
@@ -1571,13 +1590,30 @@ class tabWidget(QWidget):
         print("This function has not yet been developed")
 
     def toggle_connection(self):
-        self.Galil.has_handle()
-        self.Galil.toggle_handle()
-        print("Toggle pressed")
+
+        # try:
+        #     self.Galil.has_handle()
+        # except gclib.GclibError as e:
+        #     self.feedback_Update.append(str(e))
+
+        # if self.Galil.has_handle():
+        #     message = "Terminating connection"
+        #     self.feedback_Update.append(str(message))
+        # else:
+        #     message = "Attempting to establish connection to motor controller"
+        #     self.feedback_Update.append(str(message))
+
+        try:
+            self.Galil.toggle_handle()
+        except gclib.GclibError as e:
+            self.feedback_Update.append(str("Controller Error: {0}".format(e)))
+
         if self.Galil.has_handle():
             self.feedback_Update.append("Connected to Motor Controller")
+            self.connectBtn.setStyleSheet("background-color : green")
         else:
             self.feedback_Update.append("Disconnected from motor Controller")
+            self.connectBtn.setStyleSheet("background-color : red")
 
     def createPlotWidget(self):
         plotWidget = pg.PlotWidget()

@@ -76,21 +76,13 @@ class Galil:
 
     def jog(self, axe):
         # Try sending jog command to Galil, except an error if that fails
+        # Try commands moved to GUI application
         if axe == 'x':
-            try:
-                self.handle.GCommand('JG %d' % self.jogSpeed['x'])  # yaml file value
-            except gclib.GclibError as e:
-                print("Cannot jog: {0}".format(e))
+            self.handle.GCommand('JG %d' % self.jogSpeed['x'])  # yaml file value
         elif axe == 'y':
-            try:
-                self.handle.GCommand('JG ,%d' % self.jogSpeed['y'])  # yaml file value
-            except gclib.GclibError as e:
-                print("Cannot jog: {0}".format(e))
+            self.handle.GCommand('JG ,%d' % self.jogSpeed['y'])  # yaml file value
         elif axe == 'z':
-            try:
-                self.handle.GCommand('JG , ,%d' % self.jogSpeed['z'])  # yaml file value
-            except gclib.GclibError as e:
-                print("Cannot jog: {0}".format(e))
+            self.handle.GCommand('JG , ,%d' % self.jogSpeed['z'])  # yaml file value
         else:
             raise Exception('Incompatible axis')
 
@@ -101,8 +93,11 @@ class Galil:
             print("Cannot begin motion, {0}".format(e))
 
     def stop_motion(self):
-        self.handle.GCommand('ST')
-        print('Motion Stopped!')
+        try:
+            self.handle.GCommand('ST')
+            print('Motion Stopped!')
+        except gclib.GclibError as e:
+            print("Cannot stop motion, {0}".format(e))
 
     def set_origin(self):
         try:
