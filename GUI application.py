@@ -314,19 +314,19 @@ class MainWindow(QMainWindow):
 
         # Test Box - QPushButton
 
-        self.xUpBtn = QPushButton('X Up')
+        self.xUpBtn = QPushButton('X Forward')
         self.xUpBtn.pressed.connect(self.X_Up)
         self.xUpBtn.released.connect(self.stop_motion)
 
-        self.xDownBtn = QPushButton('X Down')
+        self.xDownBtn = QPushButton('X Backwards')
         self.xDownBtn.pressed.connect(self.X_Down)
         self.xDownBtn.released.connect(self.stop_motion)
 
-        self.yUpBtn = QPushButton('Y Up')
+        self.yUpBtn = QPushButton('Y Left')
         self.yUpBtn.pressed.connect(self.Y_Up)
         self.yUpBtn.released.connect(self.stop_motion)
 
-        self.yDownBtn = QPushButton('Y Down')
+        self.yDownBtn = QPushButton('Y Right')
         self.yDownBtn.pressed.connect(self.Y_Down)
         self.yDownBtn.released.connect(self.stop_motion)
 
@@ -907,7 +907,7 @@ class MainWindow(QMainWindow):
 
     def X_Up(self):
         # Check if speed is negative, invert if true
-        Progress = "X Up pressed"
+        Progress = "X Forward pressed"
         self.feedback_Update.append(str(Progress))
         if self.Galil.jogSpeed['x'] < 0:
             self.Galil.jogSpeed['x'] = self.Galil.jogSpeed['x'] * -1
@@ -917,7 +917,7 @@ class MainWindow(QMainWindow):
 
     def X_Down(self):
         # Check is speed is positive, invert if true
-        Progress = "X Down pressed"
+        Progress = "X Backward pressed"
         self.feedback_Update.append(str(Progress))
         if self.Galil.jogSpeed['x'] > 0:
             self.Galil.jogSpeed['x'] = -1 * self.Galil.jogSpeed['x']
@@ -927,7 +927,7 @@ class MainWindow(QMainWindow):
 
     def Y_Up(self):
         # Check if Y speed is negative, invert if true
-        Progress = "Y UP pressed"
+        Progress = "Y Left pressed"
         self.feedback_Update.append(str(Progress))
         if self.Galil.jogSpeed['y'] < 0:
             self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
@@ -937,7 +937,7 @@ class MainWindow(QMainWindow):
 
     def Y_Down(self):
         # Check if Y speed is positive, invert if true
-        Progress = "Y Down pressed"
+        Progress = "Y Right pressed"
         self.feedback_Update.append(str(Progress))
         if self.Galil.jogSpeed['y'] > 0:
             self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
@@ -947,7 +947,7 @@ class MainWindow(QMainWindow):
 
     def Z_Up(self):
         # Check if Z speed is negative, invert if true
-        Progress = "Z UP pressed"
+        Progress = "Z Up pressed"
         self.feedback_Update.append(str(Progress))
         if self.Galil.jogSpeed['z'] < 0:
             self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
@@ -966,8 +966,11 @@ class MainWindow(QMainWindow):
         print('jogging!')
 
     def stop_motion(self):
-        self.Galil.stop_motion()
-        print('stopping motion')
+        try:
+            self.Galil.stop_motion()
+            print('stopping motion')
+        except:
+            pass
 
     # Open help document
     def Show_Help(self):
@@ -1041,8 +1044,6 @@ class MainWindow(QMainWindow):
             if event_value == "Control+Up" :
                 self.grabKeyboard()
                 self.setFocus()
-                Progress = "UP key pressed on the Keyboard"
-                self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['x'] < 0:
                     self.Galil.jogSpeed['x'] = self.Galil.jogSpeed['x'] * -1
                 self.Galil.jog('x')
@@ -1050,8 +1051,6 @@ class MainWindow(QMainWindow):
                 print('jogging!')
 
             elif event_value == "Control+Down" :
-                Progress = "Down key pressed on the Keyboard"
-                self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['x'] > 0:
                     self.Galil.jogSpeed['x'] = -1 * self.Galil.jogSpeed['x']
                 self.Galil.jog('x')
@@ -1059,8 +1058,6 @@ class MainWindow(QMainWindow):
                 print('jogging!')
 
             elif event_value == "Control+Right" :
-                Progress = "Right key pressed on the Keyboard"
-                self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['y'] > 0:
                     self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
                 self.Galil.jog('y')
@@ -1069,8 +1066,6 @@ class MainWindow(QMainWindow):
 
 
             elif event_value == "Control+Left" :
-                Progress = "Left key pressed on the Keyboard"
-                self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['y'] < 0:
                     self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
                 self.Galil.jog('y')
@@ -1079,8 +1074,6 @@ class MainWindow(QMainWindow):
 
 
             elif event_value == "Control+Equal"  :
-                Progress = "Forward key pressed on the Keyboard"
-                self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['z'] < 0:
                     self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
                 self.Galil.jog('z')
@@ -1088,8 +1081,6 @@ class MainWindow(QMainWindow):
                 print('jogging!')
 
             elif event_value == "Control+Minus"  :
-                Progress = "Backward key pressed on the Keyboard"
-                self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['z'] > 0:
                     self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
                 self.Galil.jog('z')
@@ -1104,19 +1095,25 @@ class MainWindow(QMainWindow):
         event_value = self.keyevent_to_string(event)
         #self.Galil.stop_motion()
 
+        if event_value == "Up" or event_value == "Down" or event_value == "Right" or event_value == "Left" or event_value == "Minus" or event_value == "Equal":
 
-        if not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == True:
-            Progress = "Jogging stopped"
-            self.feedback_Update.append(str(Progress))
-            self.releaseKeyboard()
-            # self.Galil.stop_motion()
-            self.stop_motion()
-        elif not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == False:
-            Progress = "Keyboard jogging is disabled"
-            self.feedback_Update.append(str(Progress))
-            self.releaseKeyboard()
-            # self.Galil.stop_motion()
-            self.stop_motion()
+            if not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == True:
+                Progress = "Jogging stopped"
+                self.feedback_Update.append(str(Progress))
+                self.releaseKeyboard()
+                try:
+                    self.stop_motion()
+                except:
+                    pass
+            elif not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == False:
+                Progress = "Keyboard jogging is disabled"
+                self.feedback_Update.append(str(Progress))
+                self.releaseKeyboard()
+                # self.Galil.stop_motion()
+                try:
+                    self.stop_motion()
+                except:
+                    pass
 
 # Tab Widget in its own Class
 class tabWidget(QWidget):
@@ -1526,10 +1523,9 @@ class tabWidget(QWidget):
         self.amplitudeSpinBox.setEnabled(False)
         self.cyclesSpinBox.setEnabled(False)
         self.connectBtn.setEnabled(False)
-        self.ch2Combo.setEnabled(False)
-        self.ch1Combo.setEnabled(False)
+        self.outputCombo.setEnabled(False)
         self.freqSpinBox.setEnabled(False)
-        self.functionConfirmBtn.setEnabled(False)
+        #self.functionConfirmBtn.setEnabled(False)
         self.motorsConfirmBtn.setEnabled(False)
         self.periodSpinBox.setEnabled(False)
 
@@ -1547,10 +1543,9 @@ class tabWidget(QWidget):
         self.amplitudeSpinBox.setEnabled(True)
         self.cyclesSpinBox.setEnabled(True)
         self.connectBtn.setEnabled(True)
-        self.ch2Combo.setEnabled(True)
-        self.ch1Combo.setEnabled(True)
+        self.outputCombo.setEnabled(True)
         self.freqSpinBox.setEnabled(True)
-        self.functionConfirmBtn.setEnabled(True)
+        #self.functionConfirmBtn.setEnabled(True)
         self.motorsConfirmBtn.setEnabled(True)
         self.periodSpinBox.setEnabled(True)
 
