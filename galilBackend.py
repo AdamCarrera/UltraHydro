@@ -130,7 +130,7 @@ class Galil:
                     self.handle.GCommand('BG ABC')
 
                     while self.isMoving():
-                        time.sleep(0.1)
+                        time.sleep(0.01)
 
     def isMoving(self):
 
