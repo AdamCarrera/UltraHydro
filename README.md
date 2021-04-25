@@ -31,15 +31,16 @@ Run the following commands in the anaconda prompt with a fresh environment:
 >conda install -c conda-forge h5py \
 >conda install -c conda-forge pyyaml \
 >conda install -c conda-forge pyqtgraph \
->conda install -c conda-forge pyvisa 
+>conda install -c conda-forge pyvisa
+>conda install -c conda-forge pyvisa-py 
 
 Set up gclib, assuming it is already installed. Note, your newly created conda environment must be active.
 
 >cd %temp% \
 >mkdir py \
 >cd py \
->copy "c:\Program Files (x86)\Galil\gclib\source\wrappers\python\*" . \
->copy "c:\Program Files (x86)\Galil\gclib\examples\python\*" . \
+>copy "c:\Program Files (x86)\Galil\gclib\source\wrappers\python" . \
+>copy "c:\Program Files (x86)\Galil\gclib\examples\python" . \
 >python setup.py install
 
 Set up picotech library, assuming picoSDK is istalled
@@ -48,7 +49,7 @@ Set up picotech library, assuming picoSDK is istalled
 * Then, extract the folder and navigate to it in the anaconda terminal (same environment)
 * Finally, run this command.
 
->python install setup.py 
+>python setup.py install 
 
 When you are finished, run this command to verify the anaconda environment has all of these libraries:
 
