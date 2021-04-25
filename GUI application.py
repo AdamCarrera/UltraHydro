@@ -902,9 +902,11 @@ class MainWindow(QMainWindow):
         self.tabWidgetBox.set_jogging(True)
 
     def set_origin_pressed(self):
-        self.Galil.set_origin()
-        print('origin set')
-
+        try:
+            self.Galil.set_origin()
+            self.feedback_Update.append('Origin Defined')
+        except gclib.GclibError as e:
+            self.feedback_Update.append('Controller Error (set origin): {0}'.format(e))
 
     def X_Up(self):
         # Check if speed is negative, invert if true
@@ -912,11 +914,12 @@ class MainWindow(QMainWindow):
         self.feedback_Update.append(str(Progress))
         if self.Galil.jogSpeed['x'] < 0:
             self.Galil.jogSpeed['x'] = self.Galil.jogSpeed['x'] * -1
+
         try:
             self.Galil.jog('x')
             self.Galil.begin_motion('A')
         except gclib.GclibError as e:
-            self.feedback_Update.append("Controller Error: {0}".format(e))
+            self.feedback_Update.append("Controller Error (jog): {0}".format(e))
         print('jogging!')
 
     def X_Down(self):
@@ -929,7 +932,7 @@ class MainWindow(QMainWindow):
             self.Galil.jog('x')
             self.Galil.begin_motion('A')
         except gclib.GclibError as e:
-            self.feedback_Update.append("Controller Error: {0}".format(e))
+            self.feedback_Update.append("Controller Error (jog): {0}".format(e))
         print('jogging!')
 
     def Y_Up(self):
@@ -942,7 +945,7 @@ class MainWindow(QMainWindow):
             self.Galil.jog('y')
             self.Galil.begin_motion('B')
         except gclib.GclibError as e:
-            self.feedback_Update.append("Controller Error: {0}".format(e))
+            self.feedback_Update.append("Controller Error (jog): {0}".format(e))
         print('jogging!')
 
     def Y_Down(self):
@@ -955,7 +958,7 @@ class MainWindow(QMainWindow):
             self.Galil.jog('y')
             self.Galil.begin_motion('B')
         except gclib.GclibError as e:
-            self.feedback_Update.append("Controller Error: {0}".format(e))
+            self.feedback_Update.append("Controller Error (jog): {0}".format(e))
         print('jogging!')
 
     def Z_Up(self):
@@ -968,7 +971,7 @@ class MainWindow(QMainWindow):
             self.Galil.jog('z')
             self.Galil.begin_motion('C')
         except gclib.GclibError as e:
-            self.feedback_Update.append("Controller Error: {0}".format(e))
+            self.feedback_Update.append("Controller Error (jog): {0}".format(e))
         print('jogging!')
 
     def Z_Down(self):
@@ -981,7 +984,7 @@ class MainWindow(QMainWindow):
             self.Galil.jog('z')
             self.Galil.begin_motion('C')
         except gclib.GclibError as e:
-            self.feedback_Update.append("Controller Error: {0}".format(e))
+            self.feedback_Update.append("Controller Error (jog): {0}".format(e))
         print('jogging!')
 
     def stop_motion(self):
@@ -1064,8 +1067,11 @@ class MainWindow(QMainWindow):
                 self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['x'] < 0:
                     self.Galil.jogSpeed['x'] = self.Galil.jogSpeed['x'] * -1
-                self.Galil.jog('x')
-                self.Galil.begin_motion('A')
+                try:
+                    self.Galil.jog('x')
+                    self.Galil.begin_motion('A')
+                except gclib.GclibError as e:
+                    self.feedback_Update.append("Controller Error (jog): {0}".format(e))
                 print('jogging!')
 
             elif event_value == "Control+Down" :
@@ -1073,17 +1079,22 @@ class MainWindow(QMainWindow):
                 self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['x'] > 0:
                     self.Galil.jogSpeed['x'] = -1 * self.Galil.jogSpeed['x']
-                self.Galil.jog('x')
-                self.Galil.begin_motion('A')
-                print('jogging!')
+                try:
+                    self.Galil.jog('x')
+                    self.Galil.begin_motion('A')
+                except gclib.GclibError as e:
+                    self.feedback_Update.append("Controller Error (jog): {0}".format(e))
 
             elif event_value == "Control+Right" :
                 Progress = "Right key pressed on the Keyboard"
                 self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['y'] > 0:
                     self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
-                self.Galil.jog('y')
-                self.Galil.begin_motion('B')
+                try:
+                    self.Galil.jog('y')
+                    self.Galil.begin_motion('B')
+                except gclib.GclibError as e:
+                    self.feedback_Update.append("Controller Error (jog): {0}".format(e))
                 print('jogging!')
 
 
@@ -1092,8 +1103,11 @@ class MainWindow(QMainWindow):
                 self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['y'] < 0:
                     self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
-                self.Galil.jog('y')
-                self.Galil.begin_motion('B')
+                try:
+                    self.Galil.jog('y')
+                    self.Galil.begin_motion('B')
+                except gclib.GclibError as e:
+                    self.feedback_Update.append("Controller Error (jog): {0}".format(e))
                 print('jogging!')
 
 
@@ -1102,8 +1116,11 @@ class MainWindow(QMainWindow):
                 self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['z'] < 0:
                     self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
-                self.Galil.jog('z')
-                self.Galil.begin_motion('C')
+                try:
+                    self.Galil.jog('z')
+                    self.Galil.begin_motion('C')
+                except gclib.GclibError as e:
+                    self.feedback_Update.append("Controller Error (jog): {0}".format(e))
                 print('jogging!')
 
             elif event_value == "Control+Minus"  :
@@ -1111,8 +1128,11 @@ class MainWindow(QMainWindow):
                 self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['z'] > 0:
                     self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
-                self.Galil.jog('z')
-                self.Galil.begin_motion('C')
+                try:
+                    self.Galil.jog('z')
+                    self.Galil.begin_motion('C')
+                except gclib.GclibError as e:
+                    self.feedback_Update.append("Controller Error (jog): {0}".format(e))
                 print('jogging!')
             else:
                 self.releaseKeyboard()
@@ -1606,13 +1626,13 @@ class tabWidget(QWidget):
         try:
             self.Galil.toggle_handle()
         except gclib.GclibError as e:
-            self.feedback_Update.append(str("Controller Error: {0}".format(e)))
+            self.feedback_Update.append(str("Controller Error (handle toggle): {0}".format(e)))
 
         if self.Galil.has_handle():
-            self.feedback_Update.append("Connected to Motor Controller")
+            self.feedback_Update.append("Controller is connected")
             self.connectBtn.setStyleSheet("background-color : green")
         else:
-            self.feedback_Update.append("Disconnected from motor Controller")
+            self.feedback_Update.append("Controller is not connected")
             self.connectBtn.setStyleSheet("background-color : red")
 
     def createPlotWidget(self):

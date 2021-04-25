@@ -106,6 +106,7 @@ class Galil:
             print('origin set')
         except gclib.GclibError as e:
             print("Something went wrong: {0}".format(e))
+            raise gclib.GclibError(e)
 
     def steps_to_mm(self, steps):
         result = steps[0] / (self.xCal * 1.0)
@@ -138,6 +139,60 @@ class Galil:
             return False
         else:
             return True
+
+    def limit_poll(self):
+
+        # array of keys to hold boolean values regarding limit status
+        switches = np.array(['A Forward', 'A Reverse', 'B Forward', 'B Reverse', 'C Forward', 'C Reverse'])
+
+        # poll status of each limit switch and compile everyting into an array
+
+        # Test Code
+        stat_a_fwd = '1.0000'
+        stat_a_rev = '0.0000'
+
+        stat_b_fwd = '0.0000'
+        stat_b_rev = '0.0000'
+
+        stat_c_fwd = '0.0000'
+        stat_c_rev = '0.0000'
+
+
+        # Galil Code
+        # stat_a_fwd = self.handle.GCommand('MG_LFA')
+        # stat_a_rev = self.handle.GCommand('MG_LRA')
+        #
+        # stat_b_fwd = self.handle.GCommand('MG_LFB')
+        # stat_b_rev = self.handle.GCommand('MG_LRB')
+        #
+        # stat_c_fwd = self.handle.GCommand('MG_LFC')
+        # stat_c_rev = self.handle.GCommand('MG_LRC')
+
+        poll_value = np.array([stat_a_fwd, stat_a_rev, stat_b_fwd, stat_b_rev, stat_c_fwd, stat_c_rev], dtype=float)
+        poll_value = np.not_equal(poll_value, 1)
+
+        limit_status = np.rec.fromarrays((switches, poll_value), names=['switch', 'status'])
+
+        # # create an empty array to hold all of the active switches and sort through each switch
+        # message = np.array([])
+        #
+        # for limit in np.nditer(limit_status):
+        #     if limit['status']:
+        #         message = np.append(message, limit['switch'])
+        #
+        # # if message is empty, no limits are hit, return none
+        # # else, return the switches that have been tripped
+        if len(limit_status) > 0:
+            return limit_status
+        else:
+            return None
+
+    def limit_analysis(self, status_array=None):
+
+        for status in np.nditer(status_array):
+            if status['status']:
+                message = str(status['switch']) + ' has been pressed'
+                raise Exception(message)
 
     def clean_up(self):
 
