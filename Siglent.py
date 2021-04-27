@@ -67,6 +67,11 @@ class FunctionGenerator():
     def SetOutput(self, channel, output):
         self.Output = output
         OutPut = "C"+ channel + ":OUTP {},LOAD,50".format(self.Output)
+        self.inst.write("C1:BTWV TRMD,OFF")
+        t.sleep(.005)
+        self.inst.write("C2:BTWV TRMD,OFF")
+        t.sleep(.005)
+        self.inst.write("C" + channel + ":BTWV TRMD,RISE")
         self.inst.write(OutPut)
         t.sleep(.03)
 

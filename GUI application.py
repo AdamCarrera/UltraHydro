@@ -315,19 +315,19 @@ class MainWindow(QMainWindow):
 
         # Test Box - QPushButton
 
-        self.xUpBtn = QPushButton('X Up')
+        self.xUpBtn = QPushButton('X Forward')
         self.xUpBtn.pressed.connect(self.X_Up)
         self.xUpBtn.released.connect(self.stop_motion)
 
-        self.xDownBtn = QPushButton('X Down')
+        self.xDownBtn = QPushButton('X Backwards')
         self.xDownBtn.pressed.connect(self.X_Down)
         self.xDownBtn.released.connect(self.stop_motion)
 
-        self.yUpBtn = QPushButton('Y Up')
+        self.yUpBtn = QPushButton('Y Left')
         self.yUpBtn.pressed.connect(self.Y_Up)
         self.yUpBtn.released.connect(self.stop_motion)
 
-        self.yDownBtn = QPushButton('Y Down')
+        self.yDownBtn = QPushButton('Y Right')
         self.yDownBtn.pressed.connect(self.Y_Down)
         self.yDownBtn.released.connect(self.stop_motion)
 
@@ -589,7 +589,6 @@ class MainWindow(QMainWindow):
             self.width = self.xSamplesSb.value()
             self.xCoordinates = np.linspace(self.xMinSb.value(), self.xMaxSb.value(), self.width)
             self.feedback_Update.append("X axis width = " + str(self.width) + " samples")
-            print(self.xCoordinates)
         else:
             self.width = 1
             self.xCoordinates = np.zeros(1)
@@ -597,7 +596,6 @@ class MainWindow(QMainWindow):
             self.depth = self.ySamplesSb.value()
             self.yCoordinates = np.linspace(self.yMinSb.value(), self.yMaxSb.value(), self.depth)
             self.feedback_Update.append("Y axis depth = " + str(self.depth) + " samples")
-            print(self.yCoordinates)
         else:
             self.depth = 1
             self.yCoordinates = np.zeros(1)
@@ -605,7 +603,6 @@ class MainWindow(QMainWindow):
             self.height = self.zSamplesSb.value()
             self.zCoordinates = np.linspace(self.zMinSb.value(), self.zMaxSb.value(), self.height)
             self.feedback_Update.append("Z axis height = " + str(self.height) + " samples")
-            print(self.zCoordinates)
         else:
             self.height = 1
             self.zCoordinates = np.zeros(1)
@@ -613,6 +610,11 @@ class MainWindow(QMainWindow):
     # Jogging Actions
     def scan(self):
         self.getCoordinates()
+        if self.width == 2 or self.height == 2 or self.depth == 2:
+            self.feedback_Update.append("Scan dimensions with 2 samples are not supported")
+            self.end_scan()
+            return
+
         self.estimate_time()
         self.estimate_fileSize()
 
@@ -638,10 +640,10 @@ class MainWindow(QMainWindow):
             self.feedback_Update.append("file or HDF5 group already exists")
 
         self.feedback_Update.append("Beginning scan")
-        try:
-            self.Galil.scan(self.scanSize, self.stepSize)
-        except:
-            self.feedback_Update.append("Could not connect to the motor controller")
+
+        #self.Galil.scan(self.scanSize, self.stepSize)
+
+        #self.feedback_Update.append("Could not connect to the motor controller")
 
         self.intensity = np.zeros((self.width, self.depth, self.height))
 
@@ -652,8 +654,8 @@ class MainWindow(QMainWindow):
         scanStartTime = t.time()
 
         # Used for mfp demo, delete later
-        focusFlag = 0
-        self.tabWidgetBox.func.SetAmplitude("1", 0)
+        #focusFlag = 0
+        #self.tabWidgetBox.func.SetAmplitude("1", 0)
 
         average = np.array([])
         counter = 0
@@ -668,20 +670,20 @@ class MainWindow(QMainWindow):
                             return
 
 
-                    distanceFromCenter = (((self.width-1) / 2 - x) ** 2 + ((self.depth-1) / 2 - y) ** 2 + ((self.height-1) / 2 - z) ** 2) ** 0.5
+                    #distanceFromCenter = (((self.width-1) / 2 - x) ** 2 + ((self.depth-1) / 2 - y) ** 2 + ((self.height-1) / 2 - z) ** 2) ** 0.5
 
-                    try:
-                        if distanceFromCenter > 3 and not focusFlag == 0:
-                            self.tabWidgetBox.func.SetAmplitude("1", 0)
-                            focusFlag = 0
-                        elif 3 >= distanceFromCenter > 2 and not focusFlag == 1:
-                            self.tabWidgetBox.func.SetAmplitude("1", 1)
-                            focusFlag = 1
-                        elif distanceFromCenter <= 2 and not focusFlag == 2:
-                            self.tabWidgetBox.func.SetAmplitude("1", 5)
-                            focusFlag = 2
-                    except:
-                        self.feedback_Update.append("Error setting function generator")
+                    #try:
+                    #    if distanceFromCenter > 3 and not focusFlag == 0:
+                    #        self.tabWidgetBox.func.SetAmplitude("1", 0)
+                    #        focusFlag = 0
+                    #    elif 3 >= distanceFromCenter > 2 and not focusFlag == 1:
+                    #        self.tabWidgetBox.func.SetAmplitude("1", 1)
+                    #        focusFlag = 1
+                    #    elif distanceFromCenter <= 2 and not focusFlag == 2:
+                    #        self.tabWidgetBox.func.SetAmplitude("1", 5)
+                    #        focusFlag = 2
+                    #except:
+                    #    self.feedback_Update.append("Error setting function generator")
 
 
                     position_index = str(x) + "," + str(y) + "," + str(z)
@@ -698,6 +700,9 @@ class MainWindow(QMainWindow):
 
                         self.Galil.handle.GCommand('PA {0},{1},{2}'.format(galil_x, galil_y, galil_z))
                         self.Galil.handle.GCommand('BG ABC')
+
+                        while self.Galil.isMoving():
+                            t.sleep(0.05)
                     except:
                         self.feedback_Update.append("Error moving motors")
                         if self.config["end_scan_on_errors"]:
@@ -707,8 +712,7 @@ class MainWindow(QMainWindow):
                                 self.end_scan()
                                 return
 
-                    while self.Galil.isMoving():
-                        t.sleep(0.05)
+
 
                     try:
                         print("Scanning position:" + position_index)
@@ -892,7 +896,6 @@ class MainWindow(QMainWindow):
         self.feedback_Update.append("Ending scan")
         try:
             self.Galil.abort()
-            print('MOTION ABORTED')
         except:
             self.feedback_Update.append(
                 "Could not connect to motor controller. If the robot is moving, turn the power switch off manually")
@@ -988,8 +991,11 @@ class MainWindow(QMainWindow):
         print('jogging!')
 
     def stop_motion(self):
-        self.Galil.stop_motion()
-        print('stopping motion')
+        try:
+            self.Galil.stop_motion()
+            print('stopping motion')
+        except:
+            pass
 
     # Open help document
     def Show_Help(self):
@@ -1063,8 +1069,6 @@ class MainWindow(QMainWindow):
             if event_value == "Control+Up" :
                 self.grabKeyboard()
                 self.setFocus()
-                Progress = "UP key pressed on the Keyboard"
-                self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['x'] < 0:
                     self.Galil.jogSpeed['x'] = self.Galil.jogSpeed['x'] * -1
                 try:
@@ -1075,8 +1079,6 @@ class MainWindow(QMainWindow):
                 print('jogging!')
 
             elif event_value == "Control+Down" :
-                Progress = "Down key pressed on the Keyboard"
-                self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['x'] > 0:
                     self.Galil.jogSpeed['x'] = -1 * self.Galil.jogSpeed['x']
                 try:
@@ -1086,8 +1088,6 @@ class MainWindow(QMainWindow):
                     self.feedback_Update.append("Controller Error (jog): {0}".format(e))
 
             elif event_value == "Control+Right" :
-                Progress = "Right key pressed on the Keyboard"
-                self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['y'] > 0:
                     self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
                 try:
@@ -1099,8 +1099,6 @@ class MainWindow(QMainWindow):
 
 
             elif event_value == "Control+Left" :
-                Progress = "Left key pressed on the Keyboard"
-                self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['y'] < 0:
                     self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
                 try:
@@ -1112,8 +1110,6 @@ class MainWindow(QMainWindow):
 
 
             elif event_value == "Control+Equal"  :
-                Progress = "Forward key pressed on the Keyboard"
-                self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['z'] < 0:
                     self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
                 try:
@@ -1124,8 +1120,6 @@ class MainWindow(QMainWindow):
                 print('jogging!')
 
             elif event_value == "Control+Minus"  :
-                Progress = "Backward key pressed on the Keyboard"
-                self.feedback_Update.append(str(Progress))
                 if self.Galil.jogSpeed['z'] > 0:
                     self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
                 try:
@@ -1143,18 +1137,25 @@ class MainWindow(QMainWindow):
         event_value = self.keyevent_to_string(event)
         #self.Galil.stop_motion()
 
-        if event_value == "Control+Up" or event_value == "Control+Down" or event_value == "Control+Right" or event_value == "Control+Left" or event_value == "Control+Minus" or event_value == "Control+Equal":
-            Progress = "Jogging stopped"
-            self.feedback_Update.append(str(Progress))
+        if event_value == "Up" or event_value == "Down" or event_value == "Right" or event_value == "Left" or event_value == "Minus" or event_value == "Equal":
 
-        if not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == True:
-            self.releaseKeyboard()
-            # self.Galil.stop_motion()
-            self.stop_motion()
-        elif not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == False:
-            self.releaseKeyboard()
-            # self.Galil.stop_motion()
-            self.stop_motion()
+            if not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == True:
+                Progress = "Jogging stopped"
+                self.feedback_Update.append(str(Progress))
+                self.releaseKeyboard()
+                try:
+                    self.stop_motion()
+                except:
+                    pass
+            elif not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == False:
+                Progress = "Keyboard jogging is disabled"
+                self.feedback_Update.append(str(Progress))
+                self.releaseKeyboard()
+                # self.Galil.stop_motion()
+                try:
+                    self.stop_motion()
+                except:
+                    pass
 
 # Tab Widget in its own Class
 class tabWidget(QWidget):
@@ -1318,9 +1319,10 @@ class tabWidget(QWidget):
         self.picoConfirmBtn = QPushButton('Confirm Settings')
         self.picoConfirmBtn.pressed.connect(self.pico_confirm_data)  # Press to activate function
 
-        self.picoOnOffBtn = QPushButton('Toggle capture')
+        self.picoOnOffBtn = QPushButton('Turn on capture')
+
         self.picoOnOffBtn.setCheckable(True)
-        self.picoOnOffBtn.setStyleSheet("background-color : green")
+        self.picoOnOffBtn.setStyleSheet("background-color : white")
         self.picoOnOffBtn.pressed.connect(self.pico_toggle_capture)  # Press to activate function
 
         # Setting the layout to be grid
@@ -1397,6 +1399,16 @@ class tabWidget(QWidget):
         self.functionC2ConfirmBtn = QPushButton('Set channel 2 Settings')
         self.functionC2ConfirmBtn.pressed.connect(self.func_C2_confirm_data)
 
+        self.C1_OnOffBtn = QPushButton('Channel 1 on')
+        self.C1_OnOffBtn.setCheckable(True)
+        self.C1_OnOffBtn.setStyleSheet("background-color : white")
+        self.C1_OnOffBtn.pressed.connect(self.func_C1_toggle)
+
+        self.C2_OnOffBtn = QPushButton('Channel 2 on')
+        self.C2_OnOffBtn.setCheckable(True)
+        self.C2_OnOffBtn.setStyleSheet("background-color : white")
+        self.C2_OnOffBtn.pressed.connect(self.func_C2_toggle)
+
         # Func Gen Tab - Layout
         self.gridTab2.addWidget(self.freqLabel, 0, 0)
         self.gridTab2.addWidget(self.amplitudeLabel, 1, 0)
@@ -1410,6 +1422,8 @@ class tabWidget(QWidget):
         self.gridTab2.addWidget(self.outputCombo, 4, 1)
         self.gridTab2.addWidget(self.functionC1ConfirmBtn, 5, 0)
         self.gridTab2.addWidget(self.functionC2ConfirmBtn, 5, 1)
+        self.gridTab2.addWidget(self.C1_OnOffBtn, 6, 0)
+        self.gridTab2.addWidget(self.C2_OnOffBtn, 6, 1)
 
         # MOTORS TAB
         self.tab3.setLayout(self.gridTab3)  # Setting the Layout for the widgets
@@ -1481,30 +1495,70 @@ class tabWidget(QWidget):
         except:
             pass
 
-        self.pico.setup(range_mV=int(self.rangeCombo.currentText()), blocks=self.waveformsSpinBox.value(),
-                        timebase=self.intervalCombo.currentIndex() + 2, external=self.triggerCombo.currentIndex(),
-                        triggermV=self.thresholdSpinBox.value(), delay=self.delaySpinBox.value(),
-                        preSamples=self.preTriggerSamplesSpinBox.value(),
-                        postSamples=self.postTriggerSamplesSpinBox.value())
+        try:
+            self.pico.setup(range_mV=int(self.rangeCombo.currentText()), blocks=self.waveformsSpinBox.value(),
+                            timebase=self.intervalCombo.currentIndex() + 2, external=self.triggerCombo.currentIndex(),
+                            triggermV=self.thresholdSpinBox.value(), delay=self.delaySpinBox.value(),
+                            preSamples=self.preTriggerSamplesSpinBox.value(),
+                            postSamples=self.postTriggerSamplesSpinBox.value())
+        except AttributeError:
+            self.feedback_Update.append("Picoscope not connected. Try plugging it in and restarting the application")
 
         self.feedback_Update.append("Picoscope capture time = " + str(self.pico.getRuntime()) + " ns")
         self.picoOnOffBtn.setChecked(False)
-        self.picoOnOffBtn.setStyleSheet("background-color : green")
-
+        self.picoOnOffBtn.setText("Turn on capture")
+        self.picoOnOffBtn.setStyleSheet("background-color : white")
 
         while self.jogging:
             self.displayData()
 
+    def func_C1_toggle(self):
+        # if button is checked
+        if self.C1_OnOffBtn.isChecked():
+            try:
+                self.func.SetOutput("1", "Off")
+                self.C1_OnOffBtn.setText("Turn channel 1 on")
+                self.C1_OnOffBtn.setStyleSheet("background-color : white")
+            except:
+                pass
+        # if it is unchecked
+        else:
+            try:
+                self.func.SetOutput("1", "On")
+                self.C1_OnOffBtn.setText("Turn channel 1 off")
+                self.C1_OnOffBtn.setStyleSheet("background-color : red")
+            except:
+                pass
+
+    def func_C2_toggle(self):
+        # if button is checked
+        if self.C2_OnOffBtn.isChecked():
+            try:
+                self.func.SetOutput("2", "Off")
+                self.C2_OnOffBtn.setText("Turn channel 2 on")
+                self.C2_OnOffBtn.setStyleSheet("background-color : white")
+            except:
+                pass
+        # if it is unchecked
+        else:
+            try:
+                self.func.SetOutput("2", "On")
+                self.C2_OnOffBtn.setText("Turn channel 2 off")
+                self.C2_OnOffBtn.setStyleSheet("background-color : red")
+            except:
+                pass
+
     def pico_toggle_capture(self):
         # if button is checked
         if self.picoOnOffBtn.isChecked():
-            # setting background color to light-blue
-            self.picoOnOffBtn.setStyleSheet("background-color : green")
+            self.picoOnOffBtn.setText("Turn on capture")
+            self.picoOnOffBtn.setStyleSheet("background-color : white")
             self.jogging = False
             return
 
         # if it is unchecked
         else:
+            self.picoOnOffBtn.setText("Turn off capture")
             self.picoOnOffBtn.setStyleSheet("background-color : red")
             try:
                 self.pico.block()
@@ -1527,7 +1581,6 @@ class tabWidget(QWidget):
                     self.displayData()
             except:
                 self.feedback_Update.append("Error occurred during realtime plotting")
-
 
 
     def displayData(self):
@@ -1564,10 +1617,10 @@ class tabWidget(QWidget):
         self.amplitudeSpinBox.setEnabled(False)
         self.cyclesSpinBox.setEnabled(False)
         self.connectBtn.setEnabled(False)
-        self.ch2Combo.setEnabled(False)
-        self.ch1Combo.setEnabled(False)
+        self.C2_OnOffBtn.setEnabled(False)
+        self.picoOnOffBtn.setEnabled(False)
+        self.C1_OnOffBtn.setEnabled(False)
         self.freqSpinBox.setEnabled(False)
-        self.functionConfirmBtn.setEnabled(False)
         self.motorsConfirmBtn.setEnabled(False)
         self.periodSpinBox.setEnabled(False)
 
@@ -1585,10 +1638,10 @@ class tabWidget(QWidget):
         self.amplitudeSpinBox.setEnabled(True)
         self.cyclesSpinBox.setEnabled(True)
         self.connectBtn.setEnabled(True)
-        self.ch2Combo.setEnabled(True)
-        self.ch1Combo.setEnabled(True)
         self.freqSpinBox.setEnabled(True)
-        self.functionConfirmBtn.setEnabled(True)
+        self.C2_OnOffBtn.setEnabled(True)
+        self.picoOnOffBtn.setEnabled(True)
+        self.C1_OnOffBtn.setEnabled(True)
         self.motorsConfirmBtn.setEnabled(True)
         self.periodSpinBox.setEnabled(True)
 
@@ -1698,6 +1751,7 @@ class tabWidget(QWidget):
         self.Galil.set_origin()
         print('origin set')
 
+    #This is a legacy method, use the scan method in the MainWindow class instead
     def scan(self):
         MainWindow.disable_buttons()
         self.disable_buttons()
