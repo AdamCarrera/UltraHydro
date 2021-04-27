@@ -194,6 +194,13 @@ class Galil:
                 message = str(status['switch']) + ' has been pressed'
                 raise Exception(message)
 
+    def get_position(self):
+        a = self.handle.GCommand('PA ?')
+        b = self.handle.GCommand('PA ,?')
+        c = self.handle.GCommand('PA ,,?')
+
+        return a, b, c
+
     def clean_up(self):
 
         if self.has_handle():
