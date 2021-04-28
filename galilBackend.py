@@ -1,11 +1,18 @@
 import gclib
 import numpy as np
 import time
+from PySide2 import QtCore
 
 
-class Galil:
+class Galil(QtCore.QObject):
     # Galil class used to communicate with the motion controller
+
+    x_pos = QtCore.Signal(int)
+    y_pos = QtCore.Signal(int)
+    z_pos = QtCore.Signal(int)
+
     def __init__(self):
+        super().__init__()
         self.handle = gclib.py()                         # Initialize the library object
 
         self.axes = ['x', 'y', 'z']
@@ -51,8 +58,9 @@ class Galil:
 
             # Electronic Gearing
             self.handle.GCommand('GAD = CA')
-            self.handle.GCommand('GRD = 1')
+            self.handle.GCommand('GRD = -1')
             self.handle.GCommand('GM 1,1,1,1')
+            # self.handle.GCommand('PF 7')
 
             try:
                 self.handle.GCommand('ST')
@@ -98,6 +106,8 @@ class Galil:
             print('Motion Stopped!')
         except gclib.GclibError as e:
             print("Cannot stop motion, {0}".format(e))
+
+        self.get_position()
 
     def set_origin(self):
         try:
@@ -195,11 +205,13 @@ class Galil:
                 raise Exception(message)
 
     def get_position(self):
-        a = self.handle.GCommand('PA ?')
-        b = self.handle.GCommand('PA ,?')
-        c = self.handle.GCommand('PA ,,?')
+        a = self.handle.GCommand('RP A')
+        b = self.handle.GCommand('RP B')
+        c = self.handle.GCommand('RP C')
 
-        return a, b, c
+        self.x_pos.emit(int(a))
+        self.y_pos.emit(int(b))
+        self.z_pos.emit(int(c))
 
     def clean_up(self):
 

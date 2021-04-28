@@ -64,6 +64,8 @@ class MainWindow(QMainWindow):
         self.yCoordinates = np.zeros(1)
         self.zCoordinates = np.zeros(1)
 
+
+
         # app = QApplication(sys.argv)
         # self.screen_resolution = app.desktop().screenGeometry()
         self.screen_resolution = None
@@ -71,6 +73,10 @@ class MainWindow(QMainWindow):
         self.initialize_FunctionGenerator()
         self.initialize_Picoscope()
         self.Galil = Galil()
+
+        self.Galil.x_pos.connect(self.update_position_x)
+        self.Galil.y_pos.connect(self.update_position_y)
+        self.Galil.z_pos.connect(self.update_position_z)
 
         # setting title
         self.setWindowTitle("Ultra Hydrophonics")
@@ -115,6 +121,21 @@ class MainWindow(QMainWindow):
         Show_Help_action.setStatusTip("Open Help")
         Show_Help_action.triggered.connect(self.Show_Help)
         file_menu.addAction(Show_Help_action)
+
+    @Slot(int)
+    def update_position_x(self, position):
+        self.xPosition.setText(str(position))
+        print(position)
+
+    @Slot(int)
+    def update_position_y(self, position):
+        self.yPosition.setText(str(position))
+        print(position)
+
+    @Slot(int)
+    def update_position_z(self, position):
+        self.zPosition.setText(str(position))
+        print(position)
 
     def ui_components(self):
         # Notes of what I've learned
@@ -1135,7 +1156,7 @@ class MainWindow(QMainWindow):
 
     def keyReleaseEvent(self, event):
         event_value = self.keyevent_to_string(event)
-        #self.Galil.stop_motion()
+        self.Galil.stop_motion()
 
         if event_value == "Up" or event_value == "Down" or event_value == "Right" or event_value == "Left" or event_value == "Minus" or event_value == "Equal":
 
@@ -1433,13 +1454,16 @@ class tabWidget(QWidget):
         self.speedLabel = QLabel()
 
         self.keyboardLabel.setText('Keyboard Control')
-        self.speedLabel.setText('Speed')
+        self.speedLabel.setText('Jog Speed')
 
         self.keyboardLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.speedLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
         self.speedCombo = QComboBox()
         self.speedCombo.addItems(['LOW', 'MEDIUM', 'HIGH'])
+        self.speedCombo.activated.connect(self.jog_speed_chosen)
+        self.motorConnectionBool = False
+
         self.keyboardCombo = QComboBox()
         self.keyboardCombo.addItems(['OFF', 'ON'])
         self.keyboardCombo.setFocusPolicy(QtCore.Qt.NoFocus)
@@ -1462,8 +1486,6 @@ class tabWidget(QWidget):
         # self.stepSpinBox = QSpinBox()
         # self.stepSpinBox.valueChanged.connect(self.stepSize_changed)
 
-        self.motorsConfirmBtn = QPushButton('Confirm Settings')
-        self.motorsConfirmBtn.pressed.connect(self.confirm_Change)
 
         # Motors Tab - Layout
         self.gridTab3.addWidget(self.connectBtn, 0, 0, 1, 2)
@@ -1471,7 +1493,7 @@ class tabWidget(QWidget):
         self.gridTab3.addWidget(self.keyboardCombo, 2, 1)
         self.gridTab3.addWidget(self.speedCombo, 3, 1)
 
-        self.gridTab3.addWidget(self.motorsConfirmBtn, 4, 1)
+
 
         self.gridTab3.addWidget(self.keyboardLabel, 2, 0)
         self.gridTab3.addWidget(self.speedLabel, 3, 0)
@@ -1486,6 +1508,24 @@ class tabWidget(QWidget):
     # This boolean variable can be set to false to stop the jogging loop
     def set_jogging(self, jog):
         self.jogging = jog
+
+    def jog_speed_chosen(self):
+
+        # Checks the current index to determine the speed
+        if self.speedCombo.currentIndex() == 1:
+            print('SELECTED MEDIUM')
+            print(self.speedCombo.currentIndex())
+            self.feedback_Update.append('Jog Speed set to MEDIUM')
+        elif self.speedCombo.currentIndex() == 2:
+            print('SELECTED HIGH')
+            self.feedback_Update.append('Jog Speed set to HIGH')
+        else:
+            print('SELECTED LOW')
+            self.feedback_Update.append('Jog Speed set to LOW')
+
+
+
+
 
     def pico_confirm_data(self):
         self.jogging = False
@@ -1684,9 +1724,11 @@ class tabWidget(QWidget):
         if self.Galil.has_handle():
             self.feedback_Update.append("Controller is connected")
             self.connectBtn.setStyleSheet("background-color : green")
+            self.motorConnectionBool = True
         else:
             self.feedback_Update.append("Controller is not connected")
             self.connectBtn.setStyleSheet("background-color : red")
+            self.motorConnectionBool = False
 
     def createPlotWidget(self):
         plotWidget = pg.PlotWidget()
@@ -1750,6 +1792,8 @@ class tabWidget(QWidget):
     def set_origin_pressed(self):
         self.Galil.set_origin()
         print('origin set')
+
+
 
     #This is a legacy method, use the scan method in the MainWindow class instead
     def scan(self):
