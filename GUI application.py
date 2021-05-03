@@ -1260,7 +1260,7 @@ class tabWidget(QWidget):
 
         self.intervalCombo = QComboBox(self)
         self.intervalCombo.addItems(['4', '8', '16', '32', '48', '64', '80', '96', '112', '128', '144'])
-        self.intervalCombo.setCurrentText(str(2 ** (self.config["picoscope_timebase"])))
+        self.intervalCombo.setCurrentText('144') #str(2 ** (self.config["picoscope_timebase"]))
 
         self.triggerCombo = QComboBox(self)
         self.triggerCombo.addItems(['Self-trigger', 'External'])
@@ -1341,7 +1341,7 @@ class tabWidget(QWidget):
         self.cyclesLabel = QLabel()
         self.outputLabel = QLabel()
 
-        self.freqLabel.setText('Frequency (mHz)')
+        self.freqLabel.setText('Frequency (MHz)')
         self.amplitudeLabel.setText('Amplitude (mV)')
         self.periodLabel.setText('period (microseconds)')
         self.cyclesLabel.setText('Cycles per burst')
