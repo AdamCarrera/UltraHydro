@@ -1694,8 +1694,8 @@ class tabWidget(QWidget):
         # Add grid
         plotWidget.showGrid(x=True, y=True, alpha=0.3)
         # # Set Range
-        plotWidget.setXRange(0, 10, padding=0.05)
-        plotWidget.setYRange(-10.0, 10.0, padding=0.05)
+        #plotWidget.setXRange(0, 10, padding=0.05)
+        #plotWidget.setYRange(-10.0, 10.0, padding=0.05)
         # Set log mode
         # plotWidget.setLogMode(False, True)
         # Disable auto range
