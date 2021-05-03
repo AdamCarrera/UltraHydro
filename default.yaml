@@ -3,6 +3,7 @@ picoscope_rangemV: 10
 picoscope_blocks: 1
 picoscope_blocksMax: 100
 picoscope_timebase: 9
+#Currently default sampling interval is hard coded to 144 nS
 picoscope_externalTrigger: True
 picoscope_triggermV: 5000
 picoscope_triggermVMax: 10000
