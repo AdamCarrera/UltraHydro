@@ -58,7 +58,7 @@ class Galil(QtCore.QObject):
 
             # Electronic Gearing
             self.handle.GCommand('GAD = CA')
-            self.handle.GCommand('GRD = -1')
+            self.handle.GCommand('GRD = 1')
             self.handle.GCommand('GM 1,1,1,1')
             # self.handle.GCommand('PF 7')
 
