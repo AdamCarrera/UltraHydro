@@ -1,16 +1,17 @@
 picoscope_resolutionBits: 16
 picoscope_rangemV: 10
-picoscope_blocks: 10
+picoscope_blocks: 1
 picoscope_blocksMax: 100
-picoscope_timebase: 2
+picoscope_timebase: 9
+#Currently default sampling interval is hard coded to 144 nS
 picoscope_externalTrigger: True
 picoscope_triggermV: 5000
 picoscope_triggermVMax: 10000
 picoscope_preSamples: 0
 picoscope_postSamples: 2500
-picoscope_samplesMax: 100000
-picoscope_delay: 0
-picoscope_delayMax: 1000
+picoscope_samplesMax: 1000000000
+picoscope_delay: 104500
+picoscope_delayMax: 100000000
 picoscope_setSigGen: False
 picoscope_baseTimePerWaveform: .00003
 picoscope_baseTimePerPoint: .063
@@ -19,7 +20,7 @@ picoscope_baseDataPerPoint: 14000
 picoscope_dataPerSample: 2
 siglent_frequencyHz: '1600000'
 siglent_frequencyHzMax: '10000000'
-siglent_amplitudeV: '.375'
+siglent_amplitudeV: '.8'
 siglent_amplitudeVMax: '10'
 siglent_burstPeriodS: '.01'
 siglent_burstPeriodSMax: '1'
@@ -27,7 +28,7 @@ siglent_cycles: '50'
 siglent_cyclesMax: '100'
 siglent_C1output: 'OFF'
 siglent_C2output: 'OFF'
-galil_mmConversion: 1
+galil_mmConversion: 1119
 galil_xLimit: 10000000
 galil_yLimit: 10000000
 galil_zLimit: 10000000

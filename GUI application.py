@@ -497,6 +497,8 @@ class MainWindow(QMainWindow):
                     data = f[a_group_key]
                     print(data["Intensity map"])
                     self.tabWidgetBox.intensityMap.setImage(data["Intensity map"][:][:][:])
+                    self.tabWidgetBox.imagePlot.setLabel(axis='bottom', text='y-axis (left/right)')
+                    self.tabWidgetBox.imagePlot.setLabel(axis='left', text='z-axis (up/down)')
             except:
                 self.feedback_Update.append("Error loading file, it may have not closed properly")
 
@@ -768,18 +770,23 @@ class MainWindow(QMainWindow):
 
                     if self.xEnabled and self.yEnabled and not self.zEnabled:
                         arr = np.transpose(self.intensity, (2, 0, 1))
-                        print(arr.shape)
                         self.tabWidgetBox.intensityMap.setImage(arr[:][:][0])
+                        self.tabWidgetBox.imagePlot.setLabel(axis='bottom', text='x-axis (forward/backward)')
+                        self.tabWidgetBox.imagePlot.setLabel(axis='left', text='y-axis (left/right)')
                     elif self.xEnabled and self.zEnabled and not self.yEnabled:
                         arr = np.transpose(self.intensity, (1, 0, 2))
-                        print(arr.shape)
                         self.tabWidgetBox.intensityMap.setImage(arr[:][:][0])
+                        self.tabWidgetBox.imagePlot.setLabel(axis='bottom', text='x-axis (forward/backward)')
+                        self.tabWidgetBox.imagePlot.setLabel(axis='left', text='z-axis (up/down)')
                     elif self.yEnabled and self.zEnabled and not self.xEnabled:
                         arr = self.intensity
-                        print(arr.shape)
                         self.tabWidgetBox.intensityMap.setImage(arr[:][:][0])
+                        self.tabWidgetBox.imagePlot.setLabel(axis='bottom', text='y-axis (left/right)')
+                        self.tabWidgetBox.imagePlot.setLabel(axis='left', text='z-axis (up/down)')
                     else:
                         self.tabWidgetBox.intensityMap.setImage(self.intensity[:][:][:])
+                        self.tabWidgetBox.imagePlot.setLabel(axis='bottom', text='y-axis (left/right)')
+                        self.tabWidgetBox.imagePlot.setLabel(axis='left', text='z-axis (up/down)')
 
                     pg.QtGui.QApplication.processEvents()
                     # iv.show()
@@ -1255,7 +1262,8 @@ class tabWidget(QWidget):
         vbox.addWidget(self.plotWidget)
         self.graphTab1.setLayout(vbox)
 
-        self.intensityMap = pg.ImageView()
+        self.imagePlot = pg.PlotItem()
+        self.intensityMap = pg.ImageView(view = self.imagePlot)
 
         vbox2.addWidget(self.intensityMap)
         self.graphTab2.setLayout(vbox2)
@@ -1304,7 +1312,7 @@ class tabWidget(QWidget):
 
         self.intervalCombo = QComboBox(self)
         self.intervalCombo.addItems(['4', '8', '16', '32', '48', '64', '80', '96', '112', '128', '144'])
-        self.intervalCombo.setCurrentText(str(2 ** (self.config["picoscope_timebase"])))
+        self.intervalCombo.setCurrentText('144') #str(2 ** (self.config["picoscope_timebase"]))
 
         self.triggerCombo = QComboBox(self)
         self.triggerCombo.addItems(['Self-trigger', 'External'])
@@ -1385,7 +1393,7 @@ class tabWidget(QWidget):
         self.cyclesLabel = QLabel()
         self.outputLabel = QLabel()
 
-        self.freqLabel.setText('Frequency (kHz)')
+        self.freqLabel.setText('Frequency (MHz)')
         self.amplitudeLabel.setText('Amplitude (mV)')
         self.periodLabel.setText('period (microseconds)')
         self.cyclesLabel.setText('Cycles per burst')
@@ -1397,10 +1405,11 @@ class tabWidget(QWidget):
         self.cyclesLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.outputLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
-        self.freqSpinBox = QSpinBox()
+        self.freqSpinBox = QDoubleSpinBox()
         self.freqSpinBox.setMinimum(0)
-        self.freqSpinBox.setMaximum(float(self.config["siglent_frequencyHzMax"]) / 1000)
-        self.freqSpinBox.setValue(float(self.config["siglent_frequencyHz"]) / 1000)
+        self.freqSpinBox.setMaximum(float(self.config["siglent_frequencyHzMax"]) / 1000000)
+        self.freqSpinBox.setValue(float(self.config["siglent_frequencyHz"]) / 1000000)
+        self.freqSpinBox.setSingleStep(0.1)
         self.amplitudeSpinBox = QSpinBox()
         self.amplitudeSpinBox.setMinimum(0)
         self.amplitudeSpinBox.setMaximum(float(self.config["siglent_amplitudeVMax"]) * 1000)
@@ -1633,14 +1642,14 @@ class tabWidget(QWidget):
         pg.QtGui.QApplication.processEvents()
 
     def func_C1_confirm_data(self):
-        self.func.setup(channel = "1", frequency=str(self.freqSpinBox.value() * 1000),
+        self.func.setup(channel = "1", frequency=str(int(self.freqSpinBox.value() * 1000000)),
                                       amplitude=str(self.amplitudeSpinBox.value() / 1000),
                                       period=str(self.periodSpinBox.value() / 1000000),
                                       cycles=str(self.cyclesSpinBox.value()),
                                       output=self.outputCombo.currentText())
 
     def func_C2_confirm_data(self):
-        self.func.setup(channel = "2", frequency=str(self.freqSpinBox.value() * 1000),
+        self.func.setup(channel = "2", frequency=str(int(self.freqSpinBox.value() * 1000000)),
                                       amplitude=str(self.amplitudeSpinBox.value() / 1000),
                                       period=str(self.periodSpinBox.value() / 1000000),
                                       cycles=str(self.cyclesSpinBox.value()),
@@ -1772,8 +1781,8 @@ class tabWidget(QWidget):
         # Add grid
         plotWidget.showGrid(x=True, y=True, alpha=0.3)
         # # Set Range
-        # plotWidget.setXRange(0, 10, padding=0.1)
-        # plotWidget.setYRange(-10.0, 10.0, padding=0.01)
+        #plotWidget.setXRange(0, 10, padding=0.05)
+        #plotWidget.setYRange(-10.0, 10.0, padding=0.05)
         # Set log mode
         # plotWidget.setLogMode(False, True)
         # Disable auto range
