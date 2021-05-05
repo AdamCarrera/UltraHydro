@@ -143,7 +143,7 @@ class MainWindow(QMainWindow):
 
     @Slot(str)
     def get_limit_status(self, limit):
-        self.feedback_Update.append('Cannot jog:' + limit)
+        self.feedback_Update.append('Cannot jog: ' + limit)
 
     def ui_components(self):
         # Notes of what I've learned
