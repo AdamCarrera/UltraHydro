@@ -148,6 +148,7 @@ class MainWindow(QMainWindow):
         # LAYOUTS
         # LAYOUTS - Vertical Layout
         # Used for setting a vertical layout for certain groupboxes
+        self.showMaximized()
         self.releaseKeyboard()
 
 
@@ -967,6 +968,20 @@ class MainWindow(QMainWindow):
         print('jogging!')
 
     def Y_Up(self):
+        # Check if Y speed is positive, invert if true
+        Progress = "Y Down pressed"
+        self.feedback_Update.append(str(Progress))
+        if self.Galil.jogSpeed['y'] > 0:
+            self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
+        try:
+            self.Galil.jog('y')
+            self.Galil.begin_motion('B')
+        except gclib.GclibError as e:
+            self.feedback_Update.append("Controller Error (jog): {0}".format(e))
+        print('jogging!')
+
+    def Y_Down(self):
+
         # Check if Y speed is negative, invert if true
         Progress = "Y UP pressed"
         self.feedback_Update.append(str(Progress))
@@ -979,18 +994,6 @@ class MainWindow(QMainWindow):
             self.feedback_Update.append("Controller Error (jog): {0}".format(e))
         print('jogging!')
 
-    def Y_Down(self):
-        # Check if Y speed is positive, invert if true
-        Progress = "Y Down pressed"
-        self.feedback_Update.append(str(Progress))
-        if self.Galil.jogSpeed['y'] > 0:
-            self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
-        try:
-            self.Galil.jog('y')
-            self.Galil.begin_motion('B')
-        except gclib.GclibError as e:
-            self.feedback_Update.append("Controller Error (jog): {0}".format(e))
-        print('jogging!')
 
     def Z_Up(self):
         # Check if Z speed is negative, invert if true
@@ -1091,8 +1094,8 @@ class MainWindow(QMainWindow):
         self.grabKeyboard()
         self.setFocus()
         event_value = self.keyevent_to_string(event)
-        print(event_value)
-        print(f"keyboard update is {self.tabWidgetBox.Keyboard_Update}")
+       # print(event_value)
+       # print(f"keyboard update is {self.tabWidgetBox.Keyboard_Update}")
         if self.tabWidgetBox.Keyboard_Update == True:
             if event_value == "Control+Up" :
                 self.grabKeyboard()
@@ -1116,17 +1119,7 @@ class MainWindow(QMainWindow):
                     self.feedback_Update.append("Controller Error (jog): {0}".format(e))
 
             elif event_value == "Control+Right" :
-                if self.Galil.jogSpeed['y'] > 0:
-                    self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
-                try:
-                    self.Galil.jog('y')
-                    self.Galil.begin_motion('B')
-                except gclib.GclibError as e:
-                    self.feedback_Update.append("Controller Error (jog): {0}".format(e))
-                print('jogging!')
 
-
-            elif event_value == "Control+Left" :
                 if self.Galil.jogSpeed['y'] < 0:
                     self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
                 try:
@@ -1137,7 +1130,18 @@ class MainWindow(QMainWindow):
                 print('jogging!')
 
 
-            elif event_value == "Control+Equal"  :
+            elif event_value == "Control+Left" :
+
+                if self.Galil.jogSpeed['y'] > 0:
+                    self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
+                try:
+                    self.Galil.jog('y')
+                    self.Galil.begin_motion('B')
+                except gclib.GclibError as e:
+                    self.feedback_Update.append("Controller Error (jog): {0}".format(e))
+                print('jogging!')
+
+            elif event_value == "Control+PageUp"  :
                 if self.Galil.jogSpeed['z'] < 0:
                     self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
                 try:
@@ -1147,7 +1151,7 @@ class MainWindow(QMainWindow):
                     self.feedback_Update.append("Controller Error (jog): {0}".format(e))
                 print('jogging!')
 
-            elif event_value == "Control+Minus"  :
+            elif event_value == "Control+PageDown"  :
                 if self.Galil.jogSpeed['z'] > 0:
                     self.Galil.jogSpeed['z'] = -1 * self.Galil.jogSpeed['z']
                 try:
@@ -1163,27 +1167,26 @@ class MainWindow(QMainWindow):
 
     def keyReleaseEvent(self, event):
         event_value = self.keyevent_to_string(event)
-        self.Galil.stop_motion()
+        #self.Galil.stop_motion()
 
-        if event_value == "Up" or event_value == "Down" or event_value == "Right" or event_value == "Left" or event_value == "Minus" or event_value == "Equal":
+        if not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == True:
+            self.releaseKeyboard()
+            try:
+                self.stop_motion()
+            except:
+                pass
+        elif not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == False:
+            Progress = "Keyboard jogging is disabled"
+            self.feedback_Update.append(str(Progress))
+            self.releaseKeyboard()
+            # self.Galil.stop_motion()
+            try:
+                self.stop_motion()
+            except:
+                pass
 
-            if not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == True:
-                Progress = "Jogging stopped"
-                self.feedback_Update.append(str(Progress))
-                self.releaseKeyboard()
-                try:
-                    self.stop_motion()
-                except:
-                    pass
-            elif not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == False:
-                Progress = "Keyboard jogging is disabled"
-                self.feedback_Update.append(str(Progress))
-                self.releaseKeyboard()
-                # self.Galil.stop_motion()
-                try:
-                    self.stop_motion()
-                except:
-                    pass
+
+
 
 # Tab Widget in its own Class
 class tabWidget(QWidget):
@@ -1485,7 +1488,7 @@ class tabWidget(QWidget):
         #    print("Keyboard is on")
 
         self.connectBtn = QPushButton('Toggle Connection')
-        self.connectBtn.setStyleSheet("background-color : red")
+        self.connectBtn.setStyleSheet("background-color : white")
         self.connectBtn.pressed.connect(self.toggle_connection)
 
         # Removing for now as it is redundant
@@ -1670,7 +1673,7 @@ class tabWidget(QWidget):
         self.picoOnOffBtn.setEnabled(False)
         self.C1_OnOffBtn.setEnabled(False)
         self.freqSpinBox.setEnabled(False)
-        self.motorsConfirmBtn.setEnabled(False)
+        #self.motorsConfirmBtn.setEnabled(False)
         self.periodSpinBox.setEnabled(False)
 
     def enable_buttons(self):
@@ -1732,7 +1735,7 @@ class tabWidget(QWidget):
 
         if self.Galil.has_handle():
             self.feedback_Update.append("Controller is connected")
-            self.connectBtn.setStyleSheet("background-color : green")
+            self.connectBtn.setStyleSheet("background-color : white")
             self.motorConnectionBool = True
         else:
             self.feedback_Update.append("Controller is not connected")
