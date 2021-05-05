@@ -77,6 +77,7 @@ class MainWindow(QMainWindow):
         self.Galil.x_pos.connect(self.update_position_x)
         self.Galil.y_pos.connect(self.update_position_y)
         self.Galil.z_pos.connect(self.update_position_z)
+        self.Galil.limits.connect(self.get_limit_status)
 
         # setting title
         self.setWindowTitle("Ultra Hydrophonics")
@@ -124,18 +125,25 @@ class MainWindow(QMainWindow):
 
     @Slot(int)
     def update_position_x(self, position):
-        self.xPosition.setText(str(position))
+        position = np.round(position / self.config["galil_mmConversion"], 2)
+        self.xPosition.setText(str(position) + ' mm')
         print(position)
 
     @Slot(int)
     def update_position_y(self, position):
-        self.yPosition.setText(str(position))
+        position = np.round(position / self.config["galil_mmConversion"], 2)
+        self.yPosition.setText(str(position) + ' mm')
         print(position)
 
     @Slot(int)
     def update_position_z(self, position):
-        self.zPosition.setText(str(position))
+        position = np.round(position / self.config["galil_mmConversion"], 2)
+        self.zPosition.setText(str(position) + ' mm')
         print(position)
+
+    @Slot(str)
+    def get_limit_status(self, limit):
+        self.feedback_Update.append('Cannot jog:' + limit)
 
     def ui_components(self):
         # Notes of what I've learned
@@ -365,6 +373,7 @@ class MainWindow(QMainWindow):
         self.setHomeBtn.clicked.connect(self.set_origin_pressed)
 
         self.goHomeBtn = QPushButton('Go Home')
+        self.goHomeBtn.pressed.connect(self.go_home_button)
 
         # Test Box - QComboBox
         self.speedCombo = QComboBox()
@@ -724,6 +733,7 @@ class MainWindow(QMainWindow):
 
                         self.Galil.handle.GCommand('PA {0},{1},{2}'.format(galil_x, galil_y, galil_z))
                         self.Galil.handle.GCommand('BG ABC')
+                        self.Galil.get_position()
 
                         while self.Galil.isMoving():
                             t.sleep(0.05)
@@ -917,6 +927,13 @@ class MainWindow(QMainWindow):
     def abort_button(self):
         self.scanning = False
 
+    def go_home_button(self):
+        self.Galil.handle.GCommand('PA 0,0,0')
+        self.Galil.begin_motion('ABC')
+        while self.Galil.isMoving():
+            t.sleep(0.05)
+        self.Galil.get_position()
+
     # Once the scanning variable is false, the end scan method will be triggered in the scan loop
     def end_scan(self):
         if self.f is not None:
@@ -924,7 +941,7 @@ class MainWindow(QMainWindow):
         self.scanning = False
         self.feedback_Update.append("Ending scan")
         try:
-            self.Galil.abort()
+            self.Galil.stop_motion()
         except:
             self.feedback_Update.append(
                 "Could not connect to motor controller. If the robot is moving, turn the power switch off manually")
@@ -1472,8 +1489,9 @@ class tabWidget(QWidget):
         self.speedLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
         self.speedCombo = QComboBox()
-        self.speedCombo.addItems(['LOW', 'MEDIUM', 'HIGH'])
+        self.speedCombo.addItems(['5 mm/s', '10 mm/s', '15 mm/s', '20 mm/s'])
         self.speedCombo.activated.connect(self.jog_speed_chosen)
+        self.speedCombo.setCurrentIndex(2) # Sets the current index to 15 mm/s
         self.motorConnectionBool = False
 
         self.keyboardCombo = QComboBox()
@@ -1524,20 +1542,30 @@ class tabWidget(QWidget):
     def jog_speed_chosen(self):
 
         # Checks the current index to determine the speed
-        if self.speedCombo.currentIndex() == 1:
+        if self.speedCombo.currentIndex() == 0:
             print('SELECTED MEDIUM')
             print(self.speedCombo.currentIndex())
-            self.feedback_Update.append('Jog Speed set to MEDIUM')
-        elif self.speedCombo.currentIndex() == 2:
+            self.feedback_Update.append('Jog Speed set to 5 mm/s')
+            self.Galil.jogSpeed['x'] = 5 * self.config["galil_mmConversion"]
+            self.Galil.jogSpeed['y'] = 5 * self.config["galil_mmConversion"]
+            self.Galil.jogSpeed['x'] = 5 * self.config["galil_mmConversion"]
+        elif self.speedCombo.currentIndex() == 1:
             print('SELECTED HIGH')
-            self.feedback_Update.append('Jog Speed set to HIGH')
+            self.feedback_Update.append('Jog Speed set to 10 mm/s')
+            self.Galil.jogSpeed['x'] = 10 * self.config["galil_mmConversion"]
+            self.Galil.jogSpeed['y'] = 10 * self.config["galil_mmConversion"]
+            self.Galil.jogSpeed['x'] = 10 * self.config["galil_mmConversion"]
+        elif self.speedCombo.currentIndex() == 2:
+            self.feedback_Update.append('Jog Speed set to 15 mm/s')
+            self.Galil.jogSpeed['x'] = 15 * self.config["galil_mmConversion"]
+            self.Galil.jogSpeed['y'] = 15 * self.config["galil_mmConversion"]
+            self.Galil.jogSpeed['x'] = 15 * self.config["galil_mmConversion"]
         else:
             print('SELECTED LOW')
-            self.feedback_Update.append('Jog Speed set to LOW')
-
-
-
-
+            self.feedback_Update.append('Jog Speed set to 20 mm/s')
+            self.Galil.jogSpeed['x'] = 20 * self.config["galil_mmConversion"]
+            self.Galil.jogSpeed['y'] = 20 * self.config["galil_mmConversion"]
+            self.Galil.jogSpeed['x'] = 20 * self.config["galil_mmConversion"]
 
     def pico_confirm_data(self):
         self.jogging = False
@@ -1694,7 +1722,7 @@ class tabWidget(QWidget):
         self.C2_OnOffBtn.setEnabled(True)
         self.picoOnOffBtn.setEnabled(True)
         self.C1_OnOffBtn.setEnabled(True)
-        self.motorsConfirmBtn.setEnabled(True)
+        #self.motorsConfirmBtn.setEnabled(True)
         self.periodSpinBox.setEnabled(True)
 
     def confirm_Change(self,value):
