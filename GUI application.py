@@ -984,8 +984,23 @@ class MainWindow(QMainWindow):
         print('jogging!')
 
     def Y_Up(self):
+
+        # Check if Y speed is positive, invert if true
+        Progress = "Y left pressed"
+        self.feedback_Update.append(str(Progress))
+        if self.Galil.jogSpeed['y'] > 0:
+            self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
+        try:
+            self.Galil.jog('y')
+            self.Galil.begin_motion('B')
+        except gclib.GclibError as e:
+            self.feedback_Update.append("Controller Error (jog): {0}".format(e))
+        print('jogging!')
+
+    def Y_Down(self):
+
         # Check if Y speed is negative, invert if true
-        Progress = "Y UP pressed"
+        Progress = "Y right pressed"
         self.feedback_Update.append(str(Progress))
         if self.Galil.jogSpeed['y'] < 0:
             self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
@@ -996,18 +1011,6 @@ class MainWindow(QMainWindow):
             self.feedback_Update.append("Controller Error (jog): {0}".format(e))
         print('jogging!')
 
-    def Y_Down(self):
-        # Check if Y speed is positive, invert if true
-        Progress = "Y Down pressed"
-        self.feedback_Update.append(str(Progress))
-        if self.Galil.jogSpeed['y'] > 0:
-            self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
-        try:
-            self.Galil.jog('y')
-            self.Galil.begin_motion('B')
-        except gclib.GclibError as e:
-            self.feedback_Update.append("Controller Error (jog): {0}".format(e))
-        print('jogging!')
 
     def Z_Up(self):
         # Check if Z speed is negative, invert if true
@@ -1506,7 +1509,7 @@ class tabWidget(QWidget):
         #    print("Keyboard is on")
 
         self.connectBtn = QPushButton('Toggle Connection')
-        self.connectBtn.setStyleSheet("background-color : red")
+        self.connectBtn.setStyleSheet("background-color : white")
         self.connectBtn.pressed.connect(self.toggle_connection)
 
         # Removing for now as it is redundant
@@ -1751,11 +1754,11 @@ class tabWidget(QWidget):
 
         if self.Galil.has_handle():
             self.feedback_Update.append("Controller is connected")
-            self.connectBtn.setStyleSheet("background-color : green")
+            self.connectBtn.setStyleSheet("background-color : red")
             self.motorConnectionBool = True
         else:
             self.feedback_Update.append("Controller is not connected")
-            self.connectBtn.setStyleSheet("background-color : red")
+            self.connectBtn.setStyleSheet("background-color : white")
             self.motorConnectionBool = False
 
     def createPlotWidget(self):
