@@ -285,19 +285,25 @@ class MainWindow(QMainWindow):
         self.yMinSb = QDoubleSpinBox()  # y-axis min spinbox
         self.yMinSb.setRange(-1 * self.config["galil_yLimit"], 0)
         self.yMinSb.setSingleStep(self.config["galil_step"])
+        self.yMinSb.setValue(-18.0)
         self.yMaxSb = QDoubleSpinBox()  # y-axis max spinbox
         self.yMaxSb.setRange(0, self.config["galil_yLimit"])
         self.yMaxSb.setSingleStep(self.config["galil_step"])
+        self.yMaxSb.setValue(18.0)
         self.ySamplesSb = QSpinBox()  # y-axis step spinbox
         self.ySamplesSb.setRange(1, self.config["galil_maxSamples"])
+        self.ySamplesSb.setValue(15)
         self.zMinSb = QDoubleSpinBox()  # z-axis min spinbox
         self.zMinSb.setRange(-1 * self.config["galil_zLimit"], 0)
         self.zMinSb.setSingleStep(self.config["galil_step"])
+        self.zMinSb.setValue(-18.0)
         self.zMaxSb = QDoubleSpinBox()  # z-axis max spinbox
         self.zMaxSb.setRange(0, self.config["galil_zLimit"])
         self.zMaxSb.setSingleStep(self.config["galil_step"])
+        self.zMaxSb.setValue(18.0)
         self.zSamplesSb = QSpinBox()  # z-axis step spinbox
         self.zSamplesSb.setRange(1, self.config["galil_maxSamples"])
+        self.zSamplesSb.setValue(15)
 
         self.Scan = QPushButton('Scan')
         self.Scan.pressed.connect(self.scan)
@@ -312,9 +318,16 @@ class MainWindow(QMainWindow):
         self.xCheckBox.toggled.connect(self.checkBox_state)
         self.yCheckBox = QCheckBox('Y-Axis')
         self.yCheckBox.toggled.connect(self.checkBox_state)
+
         self.zCheckBox = QCheckBox('Z-Axis')
         self.zCheckBox.toggled.connect(self.checkBox_state)
+
+        self.yCheckBox.setChecked(True)
+        self.zCheckBox.setChecked(True)
+
         self.checkBox_state()
+
+
 
         # Test Box - Resizing Widgets
         # self.xMinSb.setFixedWidth(100)
@@ -472,6 +485,10 @@ class MainWindow(QMainWindow):
         self.centralWidget = QWidget()
         self.centralWidget.setLayout(self.hbox)  # Set Central Widget to the layout of the splitter
         self.setCentralWidget(self.centralWidget)
+
+        # this will remove minimized status
+        # and restore window with keeping maximized/normal state
+        self.setWindowState(self.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)
 
         # Creates output file, or opens it if it already exists
 
@@ -985,8 +1002,9 @@ class MainWindow(QMainWindow):
         print('jogging!')
 
     def Y_Up(self):
+
         # Check if Y speed is positive, invert if true
-        Progress = "Y Down pressed"
+        Progress = "Y left pressed"
         self.feedback_Update.append(str(Progress))
         if self.Galil.jogSpeed['y'] > 0:
             self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
@@ -1000,7 +1018,7 @@ class MainWindow(QMainWindow):
     def Y_Down(self):
 
         # Check if Y speed is negative, invert if true
-        Progress = "Y UP pressed"
+        Progress = "Y right pressed"
         self.feedback_Update.append(str(Progress))
         if self.Galil.jogSpeed['y'] < 0:
             self.Galil.jogSpeed['y'] = -1 * self.Galil.jogSpeed['y']
@@ -1184,7 +1202,13 @@ class MainWindow(QMainWindow):
 
     def keyReleaseEvent(self, event):
         event_value = self.keyevent_to_string(event)
-        #self.Galil.stop_motion()
+
+        if event_value == "Control+Up" or event_value == "Control+Down" or event_value == "Control+Right" or event_value == "Control+Left" or event_value == "Control+Minus" or event_value == "Control+Equal" or event_value == "Control":
+
+            try:
+                self.Galil.stop_motion()
+            except:
+                pass
 
         if not event.isAutoRepeat() and self.tabWidgetBox.Keyboard_Update == True:
             self.releaseKeyboard()
@@ -1701,7 +1725,6 @@ class tabWidget(QWidget):
         self.picoOnOffBtn.setEnabled(False)
         self.C1_OnOffBtn.setEnabled(False)
         self.freqSpinBox.setEnabled(False)
-        #self.motorsConfirmBtn.setEnabled(False)
         self.periodSpinBox.setEnabled(False)
 
     def enable_buttons(self):
@@ -1722,7 +1745,6 @@ class tabWidget(QWidget):
         self.C2_OnOffBtn.setEnabled(True)
         self.picoOnOffBtn.setEnabled(True)
         self.C1_OnOffBtn.setEnabled(True)
-        #self.motorsConfirmBtn.setEnabled(True)
         self.periodSpinBox.setEnabled(True)
 
     def confirm_Change(self,value):
@@ -1763,11 +1785,11 @@ class tabWidget(QWidget):
 
         if self.Galil.has_handle():
             self.feedback_Update.append("Controller is connected")
-            self.connectBtn.setStyleSheet("background-color : white")
+            self.connectBtn.setStyleSheet("background-color : red")
             self.motorConnectionBool = True
         else:
             self.feedback_Update.append("Controller is not connected")
-            self.connectBtn.setStyleSheet("background-color : red")
+            self.connectBtn.setStyleSheet("background-color : white")
             self.motorConnectionBool = False
 
     def createPlotWidget(self):
