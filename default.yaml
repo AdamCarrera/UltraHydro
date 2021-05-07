@@ -8,9 +8,9 @@ picoscope_externalTrigger: True
 picoscope_triggermV: 5000
 picoscope_triggermVMax: 10000
 picoscope_preSamples: 0
-picoscope_postSamples: 2500
+picoscope_postSamples: 3000
 picoscope_samplesMax: 1000000000
-picoscope_delay: 104500
+picoscope_delay: 34000
 picoscope_delayMax: 100000000
 picoscope_setSigGen: False
 picoscope_baseTimePerWaveform: .00003
@@ -20,7 +20,7 @@ picoscope_baseDataPerPoint: 14000
 picoscope_dataPerSample: 2
 siglent_frequencyHz: '1600000'
 siglent_frequencyHzMax: '10000000'
-siglent_amplitudeV: '.8'
+siglent_amplitudeV: '3'
 siglent_amplitudeVMax: '10'
 siglent_burstPeriodS: '.01'
 siglent_burstPeriodSMax: '1'
